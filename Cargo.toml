@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "leaflet-core",
+    "leaflet-cli"
+]
+
+resolver = "3"   # use edition 2024 feature resolver

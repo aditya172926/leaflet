@@ -1,2 +1,2 @@
-pub mod system;
 pub mod structs;
+pub mod system;

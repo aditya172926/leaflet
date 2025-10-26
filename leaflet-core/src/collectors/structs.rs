@@ -10,18 +10,18 @@ pub struct SystemMetrics {
     pub memory_used: u64,
     pub memory_total: u64,
     pub swap_used: u64,
-    pub swap_total: u64
+    pub swap_total: u64,
 }
 
 pub struct SystemInfo {
     pub os_name: String,
     pub os_version: String,
     pub kernel_version: String,
-    pub hostname: String
+    pub hostname: String,
 }
 
 pub struct SystemCollector {
-    system: System
+    system: System,
 }
 
 impl Default for SystemCollector {
@@ -35,9 +35,7 @@ impl SystemCollector {
         let mut system = System::new_all();
         system.refresh_all();
 
-        Self {
-            system
-        }
+        Self { system }
     }
 
     pub fn collect(&mut self) -> Result<SystemMetrics> {
@@ -56,7 +54,7 @@ impl SystemCollector {
             memory_used,
             memory_total,
             swap_used,
-            swap_total
+            swap_total,
         })
     }
 
@@ -65,7 +63,7 @@ impl SystemCollector {
             os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
             os_version: System::os_version().unwrap_or_else(|| "Unknown".to_string()),
             kernel_version: System::kernel_version().unwrap_or_else(|| "Unknown".to_string()),
-            hostname: System::host_name().unwrap_or_else(|| "Unknown".to_string())
+            hostname: System::host_name().unwrap_or_else(|| "Unknown".to_string()),
         }
     }
 }

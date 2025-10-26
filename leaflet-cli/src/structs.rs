@@ -5,5 +5,5 @@ use clap::Parser;
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[arg(short, long, default_value_t = 1000)]
-    interval: u64,
+    pub interval: u64,
 }

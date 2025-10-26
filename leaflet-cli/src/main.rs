@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, thread::sleep, time::Duration};
 
 use anyhow::Result;
 use clap::Parser;
@@ -42,5 +42,19 @@ async fn main() -> Result<()> {
     let mut app = App::new(system_info);
     println!("System Information: {:?}", app.system_info);
 
+    let refresh_interval = cli.interval;
+    loop {
+        match collector.collect() {
+            Ok(collected_metrics) => {
+                app.update_metrics(collected_metrics);
+            },
+            Err(e) => {
+                eprintln!("Error in collecting machine metrics {:?}", e);
+            }
+        };
+
+        println!("\nThe current metrics history for this machine is {:?}", app.metrics_history);
+        sleep(Duration::from_millis(refresh_interval));
+    }
     Ok(())
 }

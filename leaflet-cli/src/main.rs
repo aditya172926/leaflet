@@ -47,13 +47,16 @@ async fn main() -> Result<()> {
         match collector.collect() {
             Ok(collected_metrics) => {
                 app.update_metrics(collected_metrics);
-            },
+            }
             Err(e) => {
                 eprintln!("Error in collecting machine metrics {:?}", e);
             }
         };
 
-        println!("\nThe current metrics history for this machine is {:?}", app.metrics_history);
+        println!(
+            "\nThe current metrics history for this machine is {:?}",
+            app.metrics_history
+        );
         sleep(Duration::from_millis(refresh_interval));
     }
     Ok(())

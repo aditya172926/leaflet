@@ -13,6 +13,7 @@ pub struct SystemMetrics {
     pub swap_total: u64,
 }
 
+#[derive(Debug, Clone)]
 pub struct SystemInfo {
     pub os_name: String,
     pub os_version: String,

@@ -1,6 +1,5 @@
 use std::{collections::VecDeque, thread::sleep, time::Duration};
 
-use anyhow::Result;
 use clap::Parser;
 use constants::MAX_HISTORY;
 use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
@@ -33,7 +32,7 @@ impl App {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
     let cli = Cli::parse();
 
     let mut collector = SystemCollector::new();
@@ -59,5 +58,4 @@ async fn main() -> Result<()> {
         );
         sleep(Duration::from_millis(refresh_interval));
     }
-    Ok(())
 }

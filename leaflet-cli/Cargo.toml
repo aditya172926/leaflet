@@ -1,7 +1,13 @@
 [package]
 name = "leaflet-cli"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "leaflet"
+path = "src/main.rs"
 
 [dependencies]
 ratatui = "0.29.0"

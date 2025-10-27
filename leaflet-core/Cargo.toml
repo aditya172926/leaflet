@@ -4,6 +4,14 @@ version.workspace = true
 edition = "2024"
 authors.workspace = true
 repository.workspace = true
+description = "Core leaflet library for systems metric collection and visualization via the leaflet-cli"
+license = "MIT"
+readme = "../README.md"
+keywords = ["metrics", "system", "monitoring"]
+categories = ["development-tools::profiling"]
+
+[lib]
+path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }

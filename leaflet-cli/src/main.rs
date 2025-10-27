@@ -38,40 +38,35 @@ impl App {
         self.metrics_history.back()
     }
 
-    fn draw_bar_chart(mut self, mut terminal: DefaultTerminal, refresh_interval: u64, mut collector: SystemCollector) -> anyhow::Result<()> {
-        loop {
+    fn draw_bar_chart(&mut self, mut terminal: DefaultTerminal, refresh_interval: u64, mut collector: SystemCollector) -> anyhow::Result<()> {
+        while self.render {
             match collector.collect() {
                 Ok(collected_metrics) => {
                     self.update_metrics(collected_metrics);
                 }
                 Err(e) => {
-                    eprintln!("Error in collecting machine metrics {:?}", e);
+                    continue;
                 }
             };
-    
-            println!(
-                "\nThe current metrics history for this machine is {:?}",
-                self.metrics_history
-            );
 
             let latest_metric = match self.get_latest_metric() {
                 Some(metric) => {
-                    vec![metric.memory_used / metric.memory_total * 100]
+                    vec![metric.memory_used as f32 / metric.memory_total as f32 * 100.0]
                 },
-                None => vec![0],
+                None => vec![0.0],
             };
             terminal.draw(|frame| render_bar(frame, &latest_metric))?;
             self.handle_events()?;
 
             sleep(Duration::from_millis(refresh_interval));
         }
+        ratatui::restore();
         Ok(())
     }
 
     fn handle_events(&mut self) -> anyhow::Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press && key.code == event::KeyCode::Char('q') {
-                ratatui::restore();
                 self.render = false;
             }
         }
@@ -88,7 +83,6 @@ async fn main() {
 
     let mut app = App::new(system_info);
     let terminal = ratatui::init();
-    println!("System Information: {:?}", app.system_info);
 
     let refresh_interval = cli.interval;
     app.draw_bar_chart(terminal, refresh_interval, collector);

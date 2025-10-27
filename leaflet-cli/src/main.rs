@@ -10,10 +10,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
-use crate::{
-    render::vertical_bar_chart,
-    structs::Cli,
-};
+use crate::{render::vertical_bar_chart, structs::Cli};
 
 mod constants;
 mod render;

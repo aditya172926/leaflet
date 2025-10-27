@@ -14,7 +14,7 @@ pub fn render_bar(frame: &mut Frame, data: &[f32]) {
     frame.render_widget(vertical_bar_chart(data), vertical);
 }
 
-pub fn vertical_bar_chart(data: &[f32]) -> BarChart<'_>  {
+pub fn vertical_bar_chart(data: &[f32]) -> BarChart<'_> {
     let bars: Vec<Bar> = data
         .iter()
         .map(|value| vertical_bar(value, String::from("Memory")))
@@ -25,7 +25,7 @@ pub fn vertical_bar_chart(data: &[f32]) -> BarChart<'_>  {
         .bar_width(10)
 }
 
-fn vertical_bar(data: &f32, label: String) -> Bar<'_>  {
+fn vertical_bar(data: &f32, label: String) -> Bar<'_> {
     Bar::default()
         .label(label.into())
         .value(*data as u64)

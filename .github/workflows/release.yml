@@ -12,6 +12,9 @@ jobs:
     # Only run if PR was merged and has 'release' label
     if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write  # Needed to create tags and releases
+      pull-requests: read
 
     steps:
       - name: Checkout repository

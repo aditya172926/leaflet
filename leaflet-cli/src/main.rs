@@ -3,13 +3,16 @@ use std::{collections::VecDeque, thread::sleep, time::Duration};
 use clap::Parser;
 use constants::MAX_HISTORY;
 use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
-use ratatui::{crossterm::event::{self, Event, KeyEventKind}, DefaultTerminal};
+use ratatui::{
+    DefaultTerminal,
+    crossterm::event::{self, Event, KeyEventKind},
+};
 
 use crate::{render::render_bar, structs::Cli};
 
 mod constants;
-mod structs;
 mod render;
+mod structs;
 
 #[derive(Debug)]
 struct App {
@@ -38,7 +41,12 @@ impl App {
         self.metrics_history.back()
     }
 
-    fn draw_bar_chart(&mut self, mut terminal: DefaultTerminal, refresh_interval: u64, mut collector: SystemCollector) -> anyhow::Result<()> {
+    fn draw_bar_chart(
+        &mut self,
+        mut terminal: DefaultTerminal,
+        refresh_interval: u64,
+        mut collector: SystemCollector,
+    ) -> anyhow::Result<()> {
         while self.render {
             match collector.collect() {
                 Ok(collected_metrics) => {
@@ -52,7 +60,7 @@ impl App {
             let latest_metric = match self.get_latest_metric() {
                 Some(metric) => {
                     vec![metric.memory_used as f32 / metric.memory_total as f32 * 100.0]
-                },
+                }
                 None => vec![0.0],
             };
             terminal.draw(|frame| render_bar(frame, &latest_metric))?;

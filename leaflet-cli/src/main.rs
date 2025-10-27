@@ -4,10 +4,16 @@ use clap::Parser;
 use constants::MAX_HISTORY;
 use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind}, layout::{Constraint, Layout}, widgets::{Block, Borders, Paragraph}, DefaultTerminal
+    DefaultTerminal,
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    layout::{Constraint, Layout},
+    widgets::{Block, Borders, Paragraph},
 };
 
-use crate::{render::{render_bar, vertical_bar_chart}, structs::Cli};
+use crate::{
+    render::{render_bar, vertical_bar_chart},
+    structs::Cli,
+};
 
 mod constants;
 mod render;
@@ -58,30 +64,26 @@ impl App {
             };
 
             let latest_metric = match self.get_latest_metric() {
-                Some(metric) => {
-                    metric
-                }
+                Some(metric) => metric,
                 None => {
                     eprintln!("No metrics available yet.");
                     continue;
-                },
+                }
             };
-            let memory_used = vec![latest_metric.memory_used as f32 / latest_metric.memory_total as f32 * 100.0];
+            let memory_used =
+                vec![latest_metric.memory_used as f32 / latest_metric.memory_total as f32 * 100.0];
 
             terminal.draw(|frame| {
-                let layout = Layout::vertical([
-                    Constraint::Percentage(70),
-                    Constraint::Percentage(30)
-                ]).split(frame.area());
+                let layout =
+                    Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])
+                        .split(frame.area());
 
                 frame.render_widget(vertical_bar_chart(&memory_used), layout[0]);
 
                 // --- PARAGRAPH ---
                 let text = format!(
                     "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
-                    latest_metric.memory_used,
-                    latest_metric.memory_total,
-                    memory_used[0],
+                    latest_metric.memory_used, latest_metric.memory_total, memory_used[0],
                 );
                 let paragraph = Paragraph::new(text)
                     .block(Block::default().borders(Borders::ALL).title("System Info"));

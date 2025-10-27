@@ -1,6 +1,5 @@
 use ratatui::{
-    DefaultTerminal, Frame,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    Frame,
     layout::{Constraint, Layout},
     style::{Style, Stylize},
     widgets::{Bar, BarChart, BarGroup, Block, Borders},
@@ -15,10 +14,10 @@ pub fn render_bar(frame: &mut Frame, data: &[f32]) {
     frame.render_widget(vertical_bar_chart(data), vertical);
 }
 
-pub fn vertical_bar_chart(data: &[f32]) -> BarChart {
+pub fn vertical_bar_chart(data: &[f32]) -> BarChart<'_>  {
     let bars: Vec<Bar> = data
         .iter()
-        .map(|(value)| vertical_bar(value, String::from("Memory")))
+        .map(|value| vertical_bar(value, String::from("Memory")))
         .collect();
     BarChart::default()
         .block(Block::default().borders(Borders::ALL).title("Memory Usage"))
@@ -26,7 +25,7 @@ pub fn vertical_bar_chart(data: &[f32]) -> BarChart {
         .bar_width(10)
 }
 
-fn vertical_bar(data: &f32, label: String) -> Bar {
+fn vertical_bar(data: &f32, label: String) -> Bar<'_>  {
     Bar::default()
         .label(label.into())
         .value(*data as u64)

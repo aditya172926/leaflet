@@ -1,9 +1,14 @@
 [package]
 name = "leaflet-cli"
+description = "CLI tool for collecting and visualizing system metrics"
+license = "MIT"
 version.workspace = true
 edition = "2024"
 authors.workspace = true
 repository.workspace = true
+readme = "../README.md"
+keywords = ["rust", "cli", "metrics"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "leaflet"

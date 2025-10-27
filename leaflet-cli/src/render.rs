@@ -15,7 +15,7 @@ pub fn render_bar(frame: &mut Frame, data: &[f32]) {
     frame.render_widget(vertical_bar_chart(data), vertical);
 }
 
-fn vertical_bar_chart(data: &[f32]) -> BarChart {
+pub fn vertical_bar_chart(data: &[f32]) -> BarChart {
     let bars: Vec<Bar> = data
         .iter()
         .map(|(value)| vertical_bar(value, String::from("Memory")))
@@ -32,5 +32,5 @@ fn vertical_bar(data: &f32, label: String) -> Bar {
         .value(*data as u64)
         .style(Style::new().blue())
         .value_style(Style::new().blue().on_white())
-        .text_value(format!("{}%", data))
+        .text_value(format!("{:.2}%", data))
 }

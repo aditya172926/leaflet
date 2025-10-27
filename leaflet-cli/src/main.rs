@@ -4,11 +4,10 @@ use clap::Parser;
 use constants::MAX_HISTORY;
 use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 use ratatui::{
-    DefaultTerminal,
-    crossterm::event::{self, Event, KeyEventKind},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind}, layout::{Constraint, Layout}, widgets::{Block, Borders, Paragraph}, DefaultTerminal
 };
 
-use crate::{render::render_bar, structs::Cli};
+use crate::{render::{render_bar, vertical_bar_chart}, structs::Cli};
 
 mod constants;
 mod render;
@@ -53,17 +52,41 @@ impl App {
                     self.update_metrics(collected_metrics);
                 }
                 Err(e) => {
+                    eprintln!("Error collecting metrics: {:?}", e);
                     continue;
                 }
             };
 
             let latest_metric = match self.get_latest_metric() {
                 Some(metric) => {
-                    vec![metric.memory_used as f32 / metric.memory_total as f32 * 100.0]
+                    metric
                 }
-                None => vec![0.0],
+                None => {
+                    eprintln!("No metrics available yet.");
+                    continue;
+                },
             };
-            terminal.draw(|frame| render_bar(frame, &latest_metric))?;
+            let memory_used = vec![latest_metric.memory_used as f32 / latest_metric.memory_total as f32 * 100.0];
+
+            terminal.draw(|frame| {
+                let layout = Layout::vertical([
+                    Constraint::Percentage(70),
+                    Constraint::Percentage(30)
+                ]).split(frame.area());
+
+                frame.render_widget(vertical_bar_chart(&memory_used), layout[0]);
+
+                // --- PARAGRAPH ---
+                let text = format!(
+                    "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
+                    latest_metric.memory_used,
+                    latest_metric.memory_total,
+                    memory_used[0],
+                );
+                let paragraph = Paragraph::new(text)
+                    .block(Block::default().borders(Borders::ALL).title("System Info"));
+                frame.render_widget(paragraph, layout[1]);
+            })?;
             self.handle_events()?;
 
             sleep(Duration::from_millis(refresh_interval));
@@ -73,9 +96,11 @@ impl App {
     }
 
     fn handle_events(&mut self) -> anyhow::Result<()> {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == event::KeyCode::Char('q') {
-                self.render = false;
+        if event::poll(Duration::from_millis(1000))? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                    self.render = false;
+                }
             }
         }
         Ok(())

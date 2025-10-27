@@ -1,9 +1,14 @@
 [package]
 name = "leaflet-cli"
-version.workspace = true
+description = "CLI tool for collecting and visualizing system metrics"
+license = "MIT"
+version = "0.1.0"
 edition = "2024"
 authors.workspace = true
 repository.workspace = true
+readme = "../README.md"
+keywords = ["rust", "cli", "metrics"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "leaflet"
@@ -14,4 +19,4 @@ ratatui = "0.29.0"
 anyhow = { workspace = true }
 tokio = { workspace = true }
 clap = { version = "4.5.50", features = ["derive"] }
-leaflet-core = { path = '../leaflet-core' }
+leaflet-core = { version = "0.1.0", path = '../leaflet-core' }

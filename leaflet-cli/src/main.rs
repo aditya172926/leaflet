@@ -10,10 +10,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
-use crate::{
-    render::{render_bar, vertical_bar_chart},
-    structs::Cli,
-};
+use crate::{render::vertical_bar_chart, structs::Cli};
 
 mod constants;
 mod render;
@@ -113,12 +110,12 @@ impl App {
 async fn main() {
     let cli = Cli::parse();
 
-    let mut collector = SystemCollector::new();
+    let collector = SystemCollector::new();
     let system_info = collector.system_info();
 
     let mut app = App::new(system_info);
     let terminal = ratatui::init();
 
     let refresh_interval = cli.interval;
-    app.draw_bar_chart(terminal, refresh_interval, collector);
+    let _ = app.draw_bar_chart(terminal, refresh_interval, collector);
 }

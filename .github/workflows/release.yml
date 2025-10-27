@@ -1,0 +1,93 @@
+name: Release Leaflet
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+jobs:
+  release:
+    name: Build and Publish crates
+    # Only run if PR was merged and has 'release' label
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep -m1 '^version = ' leaflet-cli/Cargo.toml | cut -d '"' -f2)
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Version to release: v$VERSION"
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "refs/tags/${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "❌ Tag ${{ steps.version.outputs.version }} already exists!"
+            echo "Please bump the version in Cargo.toml before releasing."
+            exit 1
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Tag ${{ steps.version.outputs.version }} is new, proceeding..."
+          fi
+
+      - name: Build all workspace crates
+        run: cargo build --release --workspace
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
+
+      - name: Create Github release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            **Leaflet** release ${{ steps.version.outputs.version }}
+            
+            Merged PR: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+
+            Includes:
+              - leaflet-core (library)
+              - leaflet-cli (binary)
+            
+            ## Installation
+            ```bash
+            cargo install leaflet-cli
+            ```
+          
+          files: |
+            target/release/leaflet
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish core crate
+        working-directory: ./leaflet-core
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        continue-on-error: true  # In case already published
+
+      - name: Wait for crates.io to update
+        run: sleep 30
+
+      - name: Publish CLI crate
+        working-directory: ./leaflet-cli
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Success notification
+        run: |
+          echo "✅ Release ${{ steps.version.outputs.version }} published successfully!"
+          echo "📦 Crates.io: https://crates.io/crates/leaflet-cli"
+          echo "🎉 GitHub: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"

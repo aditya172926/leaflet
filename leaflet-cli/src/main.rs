@@ -15,11 +15,13 @@ use crate::{
         render_paragraph::paragraph_widget,
     },
     structs::Cli,
+    utils::bytes_to_mb,
 };
 
 mod constants;
 mod renders;
 mod structs;
+mod utils;
 
 #[derive(Debug)]
 struct App {
@@ -72,8 +74,6 @@ impl App {
                     continue;
                 }
             };
-            let memory_used =
-                vec![latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0];
 
             terminal.draw(|frame| {
                 let layout =
@@ -82,8 +82,8 @@ impl App {
 
                 frame.render_widget(
                     render_gauge(
-                        latest_metric.memory_used as f64,
-                        latest_metric.memory_total as f64,
+                        bytes_to_mb(latest_metric.memory_used),
+                        bytes_to_mb(latest_metric.memory_total),
                         "Memory Usage",
                         "MB",
                     ),
@@ -91,9 +91,12 @@ impl App {
                 );
 
                 // --- PARAGRAPH ---
+                let memory_used =
+                    latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
+
                 let text = format!(
                     "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
-                    latest_metric.memory_used, latest_metric.memory_total, memory_used[0],
+                    latest_metric.memory_used, latest_metric.memory_total, memory_used,
                 );
                 let paragraph = paragraph_widget(&text, "System Info");
                 frame.render_widget(paragraph, layout[1]);

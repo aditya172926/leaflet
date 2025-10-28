@@ -9,7 +9,7 @@ pub fn render_gauge<'a>(value: f64, max: f64, label: &'a str, unit: &'a str) -> 
     let ratio = ratio.clamp(0.0, 1.0);
 
     let display_label = format!(
-        "{:.1}% ({:.2} {}/ {:.2} {})",
+        "{:.2}% ({:.2} {}/ {:.2} {})",
         ratio * 100.0,
         value,
         unit,

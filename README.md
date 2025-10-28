@@ -47,7 +47,7 @@ interval is an optional arguement to give. It is the refresh rate of the metrics
 
 ## How it looks?
 Right now Leaflet just tracks Memory consumption and swap consumption and displays it in a TUI. This is what it looks like
-
+<img width="1886" height="960" alt="image" src="https://github.com/user-attachments/assets/8b967255-c0c5-49cf-b041-d7a64f001670" />
 
 ## Contributing
 This is a very early stage repository. But feel free to suggest features and make issues before starting to work on a pull request.

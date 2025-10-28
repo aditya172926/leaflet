@@ -1,4 +1,4 @@
-name: Release Leaflet
+name: Release Stomata
 
 on:
   pull_request:
@@ -26,7 +26,7 @@ jobs:
       - name: Get version from Cargo.toml
         id: version
         run: |
-          VERSION=$(grep -m1 '^version = ' leaflet-cli/Cargo.toml | cut -d '"' -f2)
+          VERSION=$(grep -m1 '^version = ' stomata-cli/Cargo.toml | cut -d '"' -f2)
           echo "version=v$VERSION" >> $GITHUB_OUTPUT
           echo "Version to release: v$VERSION"
 
@@ -59,26 +59,26 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
           body: |
-            **Leaflet** release ${{ steps.version.outputs.version }}
+            **Stomata** release ${{ steps.version.outputs.version }}
             
             Merged PR: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
 
             Includes:
-              - leaflet-core (library)
-              - leaflet-cli (binary)
+              - stomata-core (library)
+              - stomata-cli (binary)
             
             ## Installation
             ```bash
-            cargo install leaflet-cli
+            cargo install stomata-cli
             ```
           
           files: |
-            target/release/leaflet
+            target/release/stomata
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish core crate
-        working-directory: ./leaflet-core
+        working-directory: ./stomata-core
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true  # In case already published
 
@@ -86,11 +86,11 @@ jobs:
         run: sleep 30
 
       - name: Publish CLI crate
-        working-directory: ./leaflet-cli
+        working-directory: ./stomata-cli
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Success notification
         run: |
           echo "✅ Release ${{ steps.version.outputs.version }} published successfully!"
-          echo "📦 Crates.io: https://crates.io/crates/leaflet-cli"
+          echo "📦 Crates.io: https://crates.io/crates/stomata-cli"
           echo "🎉 GitHub: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"

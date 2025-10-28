@@ -2,7 +2,7 @@ use std::{collections::VecDeque, thread::sleep, time::Duration};
 
 use clap::Parser;
 use constants::MAX_HISTORY;
-use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
+use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -27,7 +27,7 @@ mod utils;
 struct App {
     render: bool,
     metrics_history: VecDeque<SystemMetrics>,
-    system_info: leaflet_core::collectors::structs::SystemInfo,
+    system_info: stomata_core::collectors::structs::SystemInfo,
 }
 
 impl App {
@@ -154,7 +154,7 @@ impl App {
 async fn main() {
     let cli = Cli::parse();
 
-    // initialize the system collector from leaflet-core
+    // initialize the system collector from stomata-core
     let collector = SystemCollector::new();
     let system_info = collector.system_info();
 

@@ -1,9 +1,9 @@
-# Leaflet
+# Stomata
 
-> **Note**: Leaflet is currently under development and more features and fixes are upcoming 
+> **Note**: Stomata is currently under development and more features and fixes are upcoming 
 
-**Leaflet** is a CLI tool for **collecting and visualizing system metrics** in real-time. It provides a lightweight, terminal-based dashboard to monitor memory, swap, CPU, and other resources with a clean interface.
-Right now Leaflet is very minimalistic and will introduct new features as the development goes on.
+**Stomata** is a CLI tool for **collecting and visualizing system metrics** in real-time. It provides a lightweight, terminal-based dashboard to monitor memory, swap, CPU, and other resources with a clean interface.
+Right now Stomata is very minimalistic and will introduct new features as the development goes on.
 
 ---
 
@@ -11,7 +11,7 @@ Right now Leaflet is very minimalistic and will introduct new features as the de
 
 - Real-time **memory and swap usage gauges**  
 - Minimal dependencies; built with **Rust**
-- Designed as a **workspace**: includes a reusable library (`leaflet-core`) and a CLI (`leaflet-cli`)  
+- Designed as a **workspace**: includes a reusable library (`Stomata-core`) and a CLI (`Stomata-cli`)  
 
 ---
 
@@ -20,33 +20,33 @@ Right now Leaflet is very minimalistic and will introduct new features as the de
 Install via **crates.io**:
 
 ```bash
-cargo install leaflet-cli
+cargo install stomata-cli
 ```
 
-You can also add the leaflet-core crate in your rust project as it is deployed as a separate crate
+You can also add the stomata-core crate in your rust project as it is deployed as a separate crate
 
 ```bash
-cargo add leaflet-core
+cargo add stomata-core
 ```
 
 ## Building Locally with Cargo
-Make sure you have Rust installed on your machine. Leaflet is being built using rustc version 1.90.0
+Make sure you have Rust installed on your machine. Stomata is being built using rustc version 1.90.0
 
 Clone the master branch of the repository
 ```bash
-git clone https://github.com/aditya172926/leaflet.git
+git clone https://github.com/aditya172926/stomata-cli.git
 ```
 
 Once cloned you can either run `cargo build` or `make build` to execute debug build command from the make file. If you want to build the release execute `make release`
 
 To run the cli, use the command
 ```bash
-leaflet --interval 1000
+stomata --interval 1000
 ```
 interval is an optional arguement to give. It is the refresh rate of the metrics to be fetched and rendered on the terminal UI.
 
 ## How it looks?
-Right now Leaflet just tracks Memory consumption and swap consumption and displays it in a TUI. This is what it looks like
+Right now stomata just tracks Memory consumption and swap consumption and displays it in a TUI. This is what it looks like
 
 
 ## Contributing

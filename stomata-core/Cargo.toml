@@ -1,10 +1,10 @@
 [package]
-name = "leaflet-core"
+name = "stomata-core"
 version = "0.1.0"
 edition = "2024"
 authors.workspace = true
 repository.workspace = true
-description = "Core leaflet library for systems metric collection and visualization via the leaflet-cli"
+description = "Core stomata library for systems metric collection and visualization via the stomata-cli"
 license = "MIT"
 readme = "../README.md"
 keywords = ["metrics", "system", "monitoring"]

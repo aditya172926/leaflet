@@ -2,12 +2,12 @@ use std::{collections::VecDeque, thread::sleep, time::Duration};
 
 use clap::Parser;
 use constants::MAX_HISTORY;
-use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout},
 };
+use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 
 use crate::{
     renders::{

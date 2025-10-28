@@ -7,14 +7,21 @@ use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout},
-    widgets::{Block, Borders, Paragraph},
 };
 
-use crate::{render::vertical_bar_chart, structs::Cli};
+use crate::{
+    renders::{
+        render_bar::vertical_bar_chart, render_gauge::render_gauge,
+        render_paragraph::paragraph_widget,
+    },
+    structs::Cli,
+    utils::bytes_to_mb,
+};
 
 mod constants;
-mod render;
+mod renders;
 mod structs;
+mod utils;
 
 #[derive(Debug)]
 struct App {
@@ -43,7 +50,7 @@ impl App {
         self.metrics_history.back()
     }
 
-    fn draw_bar_chart(
+    fn draw_chart(
         &mut self,
         mut terminal: DefaultTerminal,
         refresh_interval: u64,
@@ -67,23 +74,31 @@ impl App {
                     continue;
                 }
             };
-            let memory_used =
-                vec![latest_metric.memory_used as f32 / latest_metric.memory_total as f32 * 100.0];
 
             terminal.draw(|frame| {
                 let layout =
                     Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])
                         .split(frame.area());
 
-                frame.render_widget(vertical_bar_chart(&memory_used), layout[0]);
+                frame.render_widget(
+                    render_gauge(
+                        bytes_to_mb(latest_metric.memory_used),
+                        bytes_to_mb(latest_metric.memory_total),
+                        "Memory Usage",
+                        "MB",
+                    ),
+                    layout[0],
+                );
 
                 // --- PARAGRAPH ---
+                let memory_used =
+                    latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
+
                 let text = format!(
                     "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
-                    latest_metric.memory_used, latest_metric.memory_total, memory_used[0],
+                    latest_metric.memory_used, latest_metric.memory_total, memory_used,
                 );
-                let paragraph = Paragraph::new(text)
-                    .block(Block::default().borders(Borders::ALL).title("System Info"));
+                let paragraph = paragraph_widget(&text, "System Info");
                 frame.render_widget(paragraph, layout[1]);
             })?;
             self.handle_events()?;
@@ -94,6 +109,7 @@ impl App {
         Ok(())
     }
 
+    // handle quit events to closet= the new terminal
     fn handle_events(&mut self) -> anyhow::Result<()> {
         if event::poll(Duration::from_millis(1000))? {
             if let Event::Key(key) = event::read()? {
@@ -110,12 +126,14 @@ impl App {
 async fn main() {
     let cli = Cli::parse();
 
+    // initialize the system collector from leaflet-core
     let collector = SystemCollector::new();
     let system_info = collector.system_info();
 
     let mut app = App::new(system_info);
     let terminal = ratatui::init();
 
+    // get the refresh interval from the cli arg. Default 1000 ms
     let refresh_interval = cli.interval;
-    let _ = app.draw_bar_chart(terminal, refresh_interval, collector);
+    let _ = app.draw_chart(terminal, refresh_interval, collector);
 }

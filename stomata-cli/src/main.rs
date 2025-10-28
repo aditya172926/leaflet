@@ -2,12 +2,12 @@ use std::{collections::VecDeque, thread::sleep, time::Duration};
 
 use clap::Parser;
 use constants::MAX_HISTORY;
-use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout},
 };
+use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 
 use crate::{
     renders::{
@@ -27,7 +27,7 @@ mod utils;
 struct App {
     render: bool,
     metrics_history: VecDeque<SystemMetrics>,
-    system_info: leaflet_core::collectors::structs::SystemInfo,
+    system_info: stomata_core::collectors::structs::SystemInfo,
 }
 
 impl App {
@@ -76,9 +76,16 @@ impl App {
             };
 
             terminal.draw(|frame| {
-                let layout =
-                    Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])
-                        .split(frame.area());
+                let layout = Layout::vertical([
+                    Constraint::Percentage(35),
+                    Constraint::Percentage(35),
+                    Constraint::Percentage(30),
+                ])
+                .split(frame.area());
+
+                let layout_paragraph =
+                    Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+                        .split(layout[2]);
 
                 frame.render_widget(
                     render_gauge(
@@ -90,16 +97,37 @@ impl App {
                     layout[0],
                 );
 
+                frame.render_widget(
+                    render_gauge(
+                        bytes_to_mb(latest_metric.swap_used),
+                        bytes_to_mb(latest_metric.swap_total),
+                        "Swap Usage",
+                        "MB",
+                    ),
+                    layout[1],
+                );
+
                 // --- PARAGRAPH ---
                 let memory_used =
                     latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
+
+                let swap_used =
+                    latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
 
                 let text = format!(
                     "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
                     latest_metric.memory_used, latest_metric.memory_total, memory_used,
                 );
-                let paragraph = paragraph_widget(&text, "System Info");
-                frame.render_widget(paragraph, layout[1]);
+
+                let text_swap = format!(
+                    "Swap Used: {:.2} MB\nTotal Swap: {:.2} MB\nUsage: {:.2}%",
+                    latest_metric.swap_used, latest_metric.swap_total, swap_used,
+                );
+
+                let paragraph = paragraph_widget(&text, "Memory Info");
+                let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
+                frame.render_widget(paragraph, layout_paragraph[0]);
+                frame.render_widget(swap_paragraph, layout_paragraph[1]);
             })?;
             self.handle_events()?;
 
@@ -126,7 +154,7 @@ impl App {
 async fn main() {
     let cli = Cli::parse();
 
-    // initialize the system collector from leaflet-core
+    // initialize the system collector from stomata-core
     let collector = SystemCollector::new();
     let system_info = collector.system_info();
 

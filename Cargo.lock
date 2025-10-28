@@ -408,28 +408,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "leaflet-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "leaflet-core",
- "ratatui",
- "tokio",
-]
-
-[[package]]
-name = "leaflet-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "sysinfo",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.177"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -703,6 +681,28 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "stomata-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ratatui",
+ "stomata-core",
+ "tokio",
+]
+
+[[package]]
+name = "stomata-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "sysinfo",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "strsim"

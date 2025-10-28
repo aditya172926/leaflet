@@ -6,11 +6,14 @@ use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetri
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout}
+    layout::{Constraint, Layout},
 };
 
 use crate::{
-    renders::{render_bar::vertical_bar_chart, render_paragraph::paragraph_widget},
+    renders::{
+        render_bar::vertical_bar_chart, render_gauge::render_gauge,
+        render_paragraph::paragraph_widget,
+    },
     structs::Cli,
 };
 
@@ -45,7 +48,7 @@ impl App {
         self.metrics_history.back()
     }
 
-    fn draw_bar_chart(
+    fn draw_chart(
         &mut self,
         mut terminal: DefaultTerminal,
         refresh_interval: u64,
@@ -70,14 +73,22 @@ impl App {
                 }
             };
             let memory_used =
-                vec![latest_metric.memory_used as f32 / latest_metric.memory_total as f32 * 100.0];
+                vec![latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0];
 
             terminal.draw(|frame| {
                 let layout =
                     Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])
                         .split(frame.area());
 
-                frame.render_widget(vertical_bar_chart(&memory_used), layout[0]);
+                frame.render_widget(
+                    render_gauge(
+                        latest_metric.memory_used as f64,
+                        latest_metric.memory_total as f64,
+                        "Memory Usage",
+                        "MB",
+                    ),
+                    layout[0],
+                );
 
                 // --- PARAGRAPH ---
                 let text = format!(
@@ -121,5 +132,5 @@ async fn main() {
 
     // get the refresh interval from the cli arg. Default 1000 ms
     let refresh_interval = cli.interval;
-    let _ = app.draw_bar_chart(terminal, refresh_interval, collector);
+    let _ = app.draw_chart(terminal, refresh_interval, collector);
 }

@@ -6,14 +6,16 @@ use leaflet_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetri
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout},
-    widgets::{Block, Borders, Paragraph},
+    layout::{Constraint, Layout}
 };
 
-use crate::{render::vertical_bar_chart, structs::Cli};
+use crate::{
+    renders::{render_bar::vertical_bar_chart, render_paragraph::paragraph_widget},
+    structs::Cli,
+};
 
 mod constants;
-mod render;
+mod renders;
 mod structs;
 
 #[derive(Debug)]
@@ -82,8 +84,7 @@ impl App {
                     "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
                     latest_metric.memory_used, latest_metric.memory_total, memory_used[0],
                 );
-                let paragraph = Paragraph::new(text)
-                    .block(Block::default().borders(Borders::ALL).title("System Info"));
+                let paragraph = paragraph_widget(&text, "System Info");
                 frame.render_widget(paragraph, layout[1]);
             })?;
             self.handle_events()?;
@@ -94,6 +95,7 @@ impl App {
         Ok(())
     }
 
+    // handle quit events to closet= the new terminal
     fn handle_events(&mut self) -> anyhow::Result<()> {
         if event::poll(Duration::from_millis(1000))? {
             if let Event::Key(key) = event::read()? {
@@ -110,12 +112,14 @@ impl App {
 async fn main() {
     let cli = Cli::parse();
 
+    // initialize the system collector from leaflet-core
     let collector = SystemCollector::new();
     let system_info = collector.system_info();
 
     let mut app = App::new(system_info);
     let terminal = ratatui::init();
 
+    // get the refresh interval from the cli arg. Default 1000 ms
     let refresh_interval = cli.interval;
     let _ = app.draw_bar_chart(terminal, refresh_interval, collector);
 }

@@ -11,7 +11,8 @@ use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetri
 
 use crate::{
     renders::{
-        render_bar::vertical_bar_chart, render_gauge::render_gauge,
+        render_bar::vertical_bar_chart,
+        render_gauge::{self, render_gauge},
         render_paragraph::paragraph_widget,
     },
     structs::Cli,
@@ -77,16 +78,18 @@ impl App {
 
             terminal.draw(|frame| {
                 let layout = Layout::vertical([
-                    Constraint::Percentage(35),
-                    Constraint::Percentage(35),
+                    Constraint::Percentage(23),
+                    Constraint::Percentage(23),
+                    Constraint::Percentage(24),
                     Constraint::Percentage(30),
                 ])
                 .split(frame.area());
 
                 let layout_paragraph =
                     Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-                        .split(layout[2]);
+                        .split(layout[3]);
 
+                // render memory usage gauge
                 frame.render_widget(
                     render_gauge(
                         bytes_to_mb(latest_metric.memory_used),
@@ -97,6 +100,7 @@ impl App {
                     layout[0],
                 );
 
+                // render swap usage gauge
                 frame.render_widget(
                     render_gauge(
                         bytes_to_mb(latest_metric.swap_used),
@@ -107,6 +111,12 @@ impl App {
                     layout[1],
                 );
 
+                // render cpu usage gauge
+                frame.render_widget(
+                    render_gauge(latest_metric.cpu_usage as f64, 100.0, "CPU Usage", "%"),
+                    layout[2],
+                );
+
                 // --- PARAGRAPH ---
                 let memory_used =
                     latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
@@ -115,12 +125,12 @@ impl App {
                     latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
 
                 let text = format!(
-                    "Memory Used: {:.2} MB\nTotal Memory: {:.2} MB\nUsage: {:.2}%",
+                    "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
                     latest_metric.memory_used, latest_metric.memory_total, memory_used,
                 );
 
                 let text_swap = format!(
-                    "Swap Used: {:.2} MB\nTotal Swap: {:.2} MB\nUsage: {:.2}%",
+                    "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
                     latest_metric.swap_used, latest_metric.swap_total, swap_used,
                 );
 

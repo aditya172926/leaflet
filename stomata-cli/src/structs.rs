@@ -7,3 +7,8 @@ pub struct Cli {
     #[arg(short, long, default_value_t = 1000)]
     pub interval: u64,
 }
+
+// #[derive(Debug, Clone, Copy, Display, FromRepr)]
+// enum SelectedTab {
+
+// }

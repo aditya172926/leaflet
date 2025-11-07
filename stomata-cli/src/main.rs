@@ -29,6 +29,7 @@ struct App {
     render: bool,
     metrics_history: VecDeque<SystemMetrics>,
     system_info: stomata_core::collectors::structs::SystemInfo,
+    // selected_tab: 
 }
 
 impl App {
@@ -149,11 +150,9 @@ impl App {
 
     // handle quit events to closet= the new terminal
     fn handle_events(&mut self) -> anyhow::Result<()> {
-        if event::poll(Duration::from_millis(1000))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                    self.render = false;
-                }
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                self.render = false;
             }
         }
         Ok(())

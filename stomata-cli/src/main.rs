@@ -5,7 +5,7 @@ use constants::MAX_HISTORY;
 use ratatui::{
     DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Flex, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
     widgets::{Block, Borders, Tabs},
@@ -31,7 +31,7 @@ mod utils;
 struct App {
     render: bool,
     metrics_history: VecDeque<SystemMetrics>,
-    system_info: stomata_core::collectors::structs::SystemInfo,
+    system_info: SystemInfo,
     metrics_collector: SystemCollector,
     tab_index: usize,
     current_page: Page,
@@ -90,7 +90,9 @@ impl App {
             Page::Metrics => {
                 self.draw_chart(frame, chunks[1]);
             }
-            Page::System => {}
+            Page::System => {
+                self.display_system_info(frame, chunks[1]);
+            }
         }
     }
 
@@ -108,6 +110,22 @@ impl App {
             );
 
         frame.render_widget(tabs, area);
+    }
+
+    fn display_system_info(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+        let system_info_str = format!(
+            "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",
+            self.system_info.os_name,
+            self.system_info.os_version,
+            self.system_info.kernel_version,
+            self.system_info.hostname
+        );
+        let paragraph = paragraph_widget(&system_info_str, "System Info");
+        frame.render_widget(
+            paragraph.alignment(ratatui::layout::Alignment::Center),
+            area,
+        );
+        Ok(())
     }
 
     fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {

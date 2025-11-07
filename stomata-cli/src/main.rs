@@ -3,9 +3,7 @@ use std::{collections::VecDeque, thread::sleep, time::Duration};
 use clap::Parser;
 use constants::MAX_HISTORY;
 use ratatui::{
-    DefaultTerminal,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout},
+    DefaultTerminal, Frame, crossterm::event::{self, Event, KeyCode, KeyEventKind}, layout::{Constraint, Layout, Rect}, style::{Color, Modifier, Style}, text::Line, widgets::{Block, Borders, Tabs}
 };
 use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 
@@ -15,7 +13,7 @@ use crate::{
         render_gauge::{self, render_gauge},
         render_paragraph::paragraph_widget,
     },
-    structs::Cli,
+    structs::{Cli, Page},
     utils::bytes_to_mb,
 };
 
@@ -29,7 +27,8 @@ struct App {
     render: bool,
     metrics_history: VecDeque<SystemMetrics>,
     system_info: stomata_core::collectors::structs::SystemInfo,
-    // selected_tab: 
+    tab_index: usize,
+    current_page: Page
 }
 
 impl App {
@@ -38,6 +37,8 @@ impl App {
             render: true,
             metrics_history: VecDeque::with_capacity(MAX_HISTORY),
             system_info,
+            tab_index: 0,
+            current_page: Page::System,
         }
     }
 
@@ -50,6 +51,52 @@ impl App {
 
     fn get_latest_metric(&self) -> Option<&SystemMetrics> {
         self.metrics_history.back()
+    }
+
+    // go to the next tab
+    fn next_tab(&mut self) {
+        self.tab_index = (self.tab_index + 1) % Page::titles().len();
+        self.current_page = Page::from_index(self.tab_index);
+    }
+
+    // go to the previous tab
+    fn previous_tab(&mut self) {
+        if self.tab_index > 0 {
+            self.tab_index -= 1;
+        } else {
+            self.tab_index = Page::titles().len() - 1;
+        }
+        self.current_page = Page::from_index(self.tab_index);
+    }
+
+    // render according to the tab selected
+    fn render(&self, frame: &mut Frame) {
+        let chunks = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ]).split(frame.area());
+
+        // render tabs
+        self.render_tabs(frame, chunks[0]);
+
+        match self.current_page {
+            Page::Metrics => {
+                
+            }
+            Page::System => {}
+        }
+    }
+
+    // render tabs
+    fn render_tabs(&self, frame: &mut Frame, area: Rect) {
+        let titles: Vec<Line> = Page::titles().iter().map(|t| Line::from(*t)).collect();
+        let tabs = Tabs::new(titles)
+            .block(Block::default().borders(Borders::ALL).title("Stomata"))
+            .select(self.tab_index)
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default().fg(Color::Green).add_modifier(Modifier::BOLD));
+
+        frame.render_widget(tabs, area);
     }
 
     fn draw_chart(
@@ -151,8 +198,23 @@ impl App {
     // handle quit events to closet= the new terminal
     fn handle_events(&mut self) -> anyhow::Result<()> {
         if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                self.render = false;
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => {
+                        self.render = false;
+                    }
+                    KeyCode::Right | KeyCode::Tab => self.next_tab(),
+                    KeyCode::Left => self.previous_tab(),
+                    KeyCode::Char("1") => {
+                        self.tab_index = 0;
+                        self.current_page = Page::System;
+                    },
+                    KeyCode::Char("2") => {
+                        self.tab_index = 1;
+                        self.current_page = Page::Metrics;
+                    },
+                    _ => {}
+                }
             }
         }
         Ok(())

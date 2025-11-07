@@ -11,6 +11,7 @@ pub struct SystemMetrics {
     pub memory_total: u64,
     pub swap_used: u64,
     pub swap_total: u64,
+    pub processes_count: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +49,7 @@ impl SystemCollector {
         let memory_total = self.system.total_memory();
         let swap_used = self.system.used_swap();
         let swap_total = self.system.total_swap();
+        let processes_count = self.system.processes().len();
 
         Ok(SystemMetrics {
             timestamp: Utc::now(),
@@ -57,6 +59,7 @@ impl SystemCollector {
             memory_total,
             swap_used,
             swap_total,
+            processes_count,
         })
     }
 

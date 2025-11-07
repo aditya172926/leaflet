@@ -7,7 +7,7 @@ members = [
 resolver = "3"   # use edition 2024 feature resolver
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["Aditya Singh aditya26sg@gmail.com"]
 repository = "https://github.com/aditya172926/stomata-cli"

@@ -148,10 +148,6 @@ impl App {
         ])
         .split(area);
 
-        let layout_paragraph =
-            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(layout[3]);
-
         // render memory usage gauge
         frame.render_widget(
             render_gauge(
@@ -184,22 +180,34 @@ impl App {
         let memory_used =
             latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
 
-        let swap_used = latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
-
         let text = format!(
             "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
             latest_metric.memory_used, latest_metric.memory_total, memory_used,
         );
 
+        let swap_used = latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
         let text_swap = format!(
             "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
             latest_metric.swap_used, latest_metric.swap_total, swap_used,
         );
 
+        let processes_count_text =
+            format!("Current Processes count {}", latest_metric.processes_count);
+        let process_paragraph = paragraph_widget(&processes_count_text, "Processes Count");
+
         let paragraph = paragraph_widget(&text, "Memory Info");
         let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
+
+        let layout_paragraph = Layout::horizontal([
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(layout[3]);
+
         frame.render_widget(paragraph, layout_paragraph[0]);
         frame.render_widget(swap_paragraph, layout_paragraph[1]);
+        frame.render_widget(process_paragraph, layout_paragraph[2]);
 
         Ok(())
     }

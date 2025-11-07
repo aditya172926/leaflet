@@ -11,7 +11,7 @@ pub struct Cli {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Page {
     System,
-    Metrics
+    Metrics,
 }
 
 impl Page {

@@ -3,7 +3,12 @@ use std::{collections::VecDeque, thread::sleep, time::Duration};
 use clap::Parser;
 use constants::MAX_HISTORY;
 use ratatui::{
-    DefaultTerminal, Frame, crossterm::event::{self, Event, KeyCode, KeyEventKind}, layout::{Constraint, Layout, Rect}, style::{Color, Modifier, Style}, text::Line, widgets::{Block, Borders, Tabs}
+    DefaultTerminal, Frame,
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::Line,
+    widgets::{Block, Borders, Tabs},
 };
 use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
 
@@ -27,16 +32,20 @@ struct App {
     render: bool,
     metrics_history: VecDeque<SystemMetrics>,
     system_info: stomata_core::collectors::structs::SystemInfo,
+    metrics_collector: SystemCollector,
     tab_index: usize,
-    current_page: Page
+    current_page: Page,
 }
 
 impl App {
-    fn new(system_info: SystemInfo) -> Self {
+    fn new() -> Self {
+        let collector = SystemCollector::new();
+        let system_info = collector.system_info();
         Self {
             render: true,
             metrics_history: VecDeque::with_capacity(MAX_HISTORY),
             system_info,
+            metrics_collector: collector,
             tab_index: 0,
             current_page: Page::System,
         }
@@ -70,18 +79,16 @@ impl App {
     }
 
     // render according to the tab selected
-    fn render(&self, frame: &mut Frame) {
-        let chunks = Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Min(0),
-        ]).split(frame.area());
+    fn render(&mut self, frame: &mut Frame) {
+        let chunks =
+            Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
 
         // render tabs
         self.render_tabs(frame, chunks[0]);
 
         match self.current_page {
             Page::Metrics => {
-                
+                self.draw_chart(frame, chunks[1]);
             }
             Page::System => {}
         }
@@ -94,126 +101,123 @@ impl App {
             .block(Block::default().borders(Borders::ALL).title("Stomata"))
             .select(self.tab_index)
             .style(Style::default().fg(Color::White))
-            .highlight_style(Style::default().fg(Color::Green).add_modifier(Modifier::BOLD));
+            .highlight_style(
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            );
 
         frame.render_widget(tabs, area);
     }
 
-    fn draw_chart(
-        &mut self,
-        mut terminal: DefaultTerminal,
-        refresh_interval: u64,
-        mut collector: SystemCollector,
-    ) -> anyhow::Result<()> {
-        while self.render {
-            match collector.collect() {
-                Ok(collected_metrics) => {
-                    self.update_metrics(collected_metrics);
-                }
-                Err(e) => {
-                    eprintln!("Error collecting metrics: {:?}", e);
-                    continue;
-                }
-            };
+    fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+        match self.metrics_collector.collect() {
+            Ok(collected_metrics) => {
+                self.update_metrics(collected_metrics);
+            }
+            Err(e) => {
+                eprintln!("Error collecting metrics: {:?}", e);
+            }
+        };
 
-            let latest_metric = match self.get_latest_metric() {
-                Some(metric) => metric,
-                None => {
-                    eprintln!("No metrics available yet.");
-                    continue;
-                }
-            };
+        let latest_metric = match self.get_latest_metric() {
+            Some(metric) => metric,
+            None => {
+                eprintln!("No metrics available yet.");
+                &SystemMetrics::default()
+            }
+        };
 
-            terminal.draw(|frame| {
-                let layout = Layout::vertical([
-                    Constraint::Percentage(23),
-                    Constraint::Percentage(23),
-                    Constraint::Percentage(24),
-                    Constraint::Percentage(30),
-                ])
-                .split(frame.area());
+        let layout = Layout::vertical([
+            Constraint::Percentage(23),
+            Constraint::Percentage(23),
+            Constraint::Percentage(24),
+            Constraint::Percentage(30),
+        ])
+        .split(area);
 
-                let layout_paragraph =
-                    Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-                        .split(layout[3]);
+        let layout_paragraph =
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(layout[3]);
 
-                // render memory usage gauge
-                frame.render_widget(
-                    render_gauge(
-                        bytes_to_mb(latest_metric.memory_used),
-                        bytes_to_mb(latest_metric.memory_total),
-                        "Memory Usage",
-                        "MB",
-                    ),
-                    layout[0],
-                );
+        // render memory usage gauge
+        frame.render_widget(
+            render_gauge(
+                bytes_to_mb(latest_metric.memory_used),
+                bytes_to_mb(latest_metric.memory_total),
+                "Memory Usage",
+                "MB",
+            ),
+            layout[0],
+        );
 
-                // render swap usage gauge
-                frame.render_widget(
-                    render_gauge(
-                        bytes_to_mb(latest_metric.swap_used),
-                        bytes_to_mb(latest_metric.swap_total),
-                        "Swap Usage",
-                        "MB",
-                    ),
-                    layout[1],
-                );
+        // render swap usage gauge
+        frame.render_widget(
+            render_gauge(
+                bytes_to_mb(latest_metric.swap_used),
+                bytes_to_mb(latest_metric.swap_total),
+                "Swap Usage",
+                "MB",
+            ),
+            layout[1],
+        );
 
-                // render cpu usage gauge
-                frame.render_widget(
-                    render_gauge(latest_metric.cpu_usage as f64, 100.0, "CPU Usage", "%"),
-                    layout[2],
-                );
+        // render cpu usage gauge
+        frame.render_widget(
+            render_gauge(latest_metric.cpu_usage as f64, 100.0, "CPU Usage", "%"),
+            layout[2],
+        );
 
-                // --- PARAGRAPH ---
-                let memory_used =
-                    latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
+        // --- PARAGRAPH ---
+        let memory_used =
+            latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
 
-                let swap_used =
-                    latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
+        let swap_used = latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
 
-                let text = format!(
-                    "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
-                    latest_metric.memory_used, latest_metric.memory_total, memory_used,
-                );
+        let text = format!(
+            "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
+            latest_metric.memory_used, latest_metric.memory_total, memory_used,
+        );
 
-                let text_swap = format!(
-                    "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
-                    latest_metric.swap_used, latest_metric.swap_total, swap_used,
-                );
+        let text_swap = format!(
+            "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
+            latest_metric.swap_used, latest_metric.swap_total, swap_used,
+        );
 
-                let paragraph = paragraph_widget(&text, "Memory Info");
-                let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
-                frame.render_widget(paragraph, layout_paragraph[0]);
-                frame.render_widget(swap_paragraph, layout_paragraph[1]);
-            })?;
-            self.handle_events()?;
+        let paragraph = paragraph_widget(&text, "Memory Info");
+        let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
+        frame.render_widget(paragraph, layout_paragraph[0]);
+        frame.render_widget(swap_paragraph, layout_paragraph[1]);
 
-            sleep(Duration::from_millis(refresh_interval));
-        }
-        ratatui::restore();
         Ok(())
     }
 
-    // handle quit events to closet= the new terminal
+    // handle quit events to close the new terminal
     fn handle_events(&mut self) -> anyhow::Result<()> {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') => {
-                        self.render = false;
+        if event::poll(Duration::from_millis(100))? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Char('q') => {
+                            self.render = false;
+                            ratatui::restore();
+                        }
+                        KeyCode::Right | KeyCode::Tab => {
+                            self.next_tab();
+                        }
+                        KeyCode::Left => {
+                            self.previous_tab();
+                        }
+                        KeyCode::Char('1') => {
+                            self.tab_index = 0;
+                            self.current_page = Page::System;
+                        }
+                        KeyCode::Char('2') => {
+                            self.tab_index = 1;
+                            self.current_page = Page::Metrics;
+                        }
+                        _ => {}
                     }
-                    KeyCode::Right | KeyCode::Tab => self.next_tab(),
-                    KeyCode::Left => self.previous_tab(),
-                    KeyCode::Char("1") => {
-                        self.tab_index = 0;
-                        self.current_page = Page::System;
-                    },
-                    KeyCode::Char("2") => {
-                        self.tab_index = 1;
-                        self.current_page = Page::Metrics;
-                    },
-                    _ => {}
                 }
             }
         }
@@ -222,17 +226,25 @@ impl App {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-
-    // initialize the system collector from stomata-core
-    let collector = SystemCollector::new();
-    let system_info = collector.system_info();
-
-    let mut app = App::new(system_info);
-    let terminal = ratatui::init();
+    let mut app = App::new();
+    let mut terminal = ratatui::init();
 
     // get the refresh interval from the cli arg. Default 1000 ms
     let refresh_interval = cli.interval;
-    let _ = app.draw_chart(terminal, refresh_interval, collector);
+
+    // main render loop
+    while app.render {
+        // draw
+        terminal.draw(|frame| app.render(frame))?;
+
+        // handle events
+        app.handle_events()?;
+
+        // sleep for refresh interval
+        sleep(Duration::from_millis(refresh_interval));
+    }
+
+    Ok(())
 }

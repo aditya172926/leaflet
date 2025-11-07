@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use sysinfo::System;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
     pub cpu_count: usize,
@@ -21,6 +21,7 @@ pub struct SystemInfo {
     pub hostname: String,
 }
 
+#[derive(Debug)]
 pub struct SystemCollector {
     system: System,
 }

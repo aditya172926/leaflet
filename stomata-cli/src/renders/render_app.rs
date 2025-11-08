@@ -87,6 +87,7 @@ impl App {
             Page::System => {
                 let _ = self.display_system_info(frame, chunks[1]);
             }
+            Page::Processes => {}
         }
     }
 
@@ -212,6 +213,10 @@ impl App {
         Ok(())
     }
 
+    fn display_processes(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+        let processes = self.metrics_collector.get_running_processes();
+        Ok(())
+    }
     // handle quit events to close the new terminal
     pub fn handle_events(&mut self) -> anyhow::Result<()> {
         if event::poll(Duration::from_millis(100))? {

@@ -24,6 +24,27 @@ pub struct SystemInfo {
     pub hostname: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProcessData {
+    pub pid: u32,
+    pub name: String,
+    pub cpu_usage: f32,
+    pub memory: u64,
+    pub status: String
+}
+
+impl From<&Process> for ProcessData {
+    fn from(process: &Process) -> Self {
+        ProcessData { 
+            pid: process.pid().as_u32(),
+            name: process.name().to_string_lossy().to_string(),
+            cpu_usage: process.cpu_usage(),
+            memory: process.memory(),
+            status: process.status().to_string()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SystemCollector {
     system: System,
@@ -74,8 +95,8 @@ impl SystemCollector {
         }
     }
 
-    pub fn get_running_processes(&self) -> &HashMap<Pid, Process> {
-        let processes = self.system.processes();
+    pub fn get_running_processes(&self) -> Vec<ProcessData> {
+        let processes: Vec<ProcessData> = self.system.processes().values().map(ProcessData::from).collect();
         return processes;
     }
 }

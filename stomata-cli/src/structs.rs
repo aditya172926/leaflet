@@ -1,4 +1,5 @@
 use clap::Parser;
+use ratatui::{layout::Constraint, widgets::Cell};
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -12,17 +13,19 @@ pub struct Cli {
 pub enum Page {
     System,
     Metrics,
+    Processes
 }
 
 impl Page {
     pub fn titles() -> Vec<&'static str> {
-        vec!["System", "Metrics"]
+        vec!["System", "Metrics", "Processes"]
     }
 
     pub fn get_title(&self) -> &'static str {
         match self {
             Page::System => "System",
             Page::Metrics => "Metrics",
+            Page::Processes => "Processes"
         }
     }
 
@@ -30,7 +33,14 @@ impl Page {
         match index {
             0 => Page::System,
             1 => Page::Metrics,
+            2 => Page::Processes,
             _ => Page::System,
         }
     }
+}
+
+// Trait that any type must implement to be displayable in a table
+pub trait TableRow {
+    fn to_cells(&self) -> Vec<Cell>;
+    fn column_widths() -> Vec<Constraint>;
 }

@@ -1,10 +1,10 @@
-use ratatui::{layout::Constraint, style::{Color, Style}, widgets::{Cell, Row, Table}};
+use ratatui::{layout::Constraint, style::{Color, Style}, widgets::{Block, Borders, Cell, Row, Table}};
 use stomata_core::collectors::structs::ProcessData;
 
 use crate::structs::TableRow;
 
 impl TableRow for ProcessData {
-    fn to_cells(&self) -> Vec<Cell> {
+    fn to_cells(&self) -> Vec<Cell<'_>> {
         vec![
             Cell::from(self.pid.to_string()),
             Cell::from(self.name.clone()),
@@ -25,10 +25,14 @@ impl TableRow for ProcessData {
     }
 }
 
-pub fn render_table<T>(
-    headers: Vec<String>,
-    items: Vec<T>
-) {
+pub fn render_table<'a, T>(
+    headers: Vec<&'a str>,
+    items: Vec<&'a T>,
+    title: &'a str
+) -> Table<'a>
+    where
+        T: TableRow
+    {
     let header_style = Style::default()
         .fg(Color::White)
         .bg(Color::Black);
@@ -40,7 +44,16 @@ pub fn render_table<T>(
         .style(header_style)
         .height(1);
 
-    // let rows = items.iter().enumerate().map(|(index, data)| {
+    let rows: Vec<Row> = items
+        .iter()
+        .map(|item| {
+            let cells = item.to_cells();
+            Row::new(cells).height(1)
+        })
+        .collect();
 
-    // })
+    Table::new(rows, T::column_widths())
+        .header(header)
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .style(Style::default().fg(Color::White))
 }

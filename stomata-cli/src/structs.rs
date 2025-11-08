@@ -21,14 +21,6 @@ impl Page {
         vec!["System", "Metrics", "Processes"]
     }
 
-    pub fn get_title(&self) -> &'static str {
-        match self {
-            Page::System => "System",
-            Page::Metrics => "Metrics",
-            Page::Processes => "Processes"
-        }
-    }
-
     pub fn from_index(index: usize) -> Self {
         match index {
             0 => Page::System,
@@ -41,6 +33,6 @@ impl Page {
 
 // Trait that any type must implement to be displayable in a table
 pub trait TableRow {
-    fn to_cells(&self) -> Vec<Cell>;
+    fn to_cells(&self) -> Vec<Cell<'_>>;
     fn column_widths() -> Vec<Constraint>;
 }

@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sysinfo::{Pid, Process, System};
+use sysinfo::{Process, System};
 
 #[derive(Debug, Default)]
 pub struct SystemMetrics {
@@ -96,7 +94,10 @@ impl SystemCollector {
     }
 
     pub fn get_running_processes(&self) -> Vec<ProcessData> {
-        let processes: Vec<ProcessData> = self.system.processes().values().map(ProcessData::from).collect();
+        let processes: Vec<ProcessData> = self.system.processes()
+            .values()
+            .map(ProcessData::from)
+            .collect();
         return processes;
     }
 }

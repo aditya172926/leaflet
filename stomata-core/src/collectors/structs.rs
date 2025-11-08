@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sysinfo::System;
+use sysinfo::{Pid, Process, System};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
     pub cpu_count: usize,
@@ -42,7 +44,7 @@ impl SystemCollector {
     }
 
     pub fn collect(&mut self) -> Result<SystemMetrics> {
-        self.system.refresh_all();
+        self.system.refresh_all(); // we might not want to do this, unnecessary overhead
         let cpu_count = self.system.cpus().len();
         let cpu_usage = self.system.global_cpu_usage();
         let memory_used = self.system.used_memory();
@@ -70,5 +72,10 @@ impl SystemCollector {
             kernel_version: System::kernel_version().unwrap_or_else(|| "Unknown".to_string()),
             hostname: System::host_name().unwrap_or_else(|| "Unknown".to_string()),
         }
+    }
+
+    pub fn get_running_processes(&self) -> &HashMap<Pid, Process> {
+        let processes = self.system.processes();
+        return processes;
     }
 }

@@ -28,17 +28,17 @@ pub struct ProcessData {
     pub name: String,
     pub cpu_usage: f32,
     pub memory: u64,
-    pub status: String
+    pub status: String,
 }
 
 impl From<&Process> for ProcessData {
     fn from(process: &Process) -> Self {
-        ProcessData { 
+        ProcessData {
             pid: process.pid().as_u32(),
             name: process.name().to_string_lossy().to_string(),
             cpu_usage: process.cpu_usage(),
             memory: process.memory(),
-            status: process.status().to_string()
+            status: process.status().to_string(),
         }
     }
 }
@@ -94,7 +94,9 @@ impl SystemCollector {
     }
 
     pub fn get_running_processes(&self) -> Vec<ProcessData> {
-        let processes: Vec<ProcessData> = self.system.processes()
+        let processes: Vec<ProcessData> = self
+            .system
+            .processes()
             .values()
             .map(ProcessData::from)
             .collect();

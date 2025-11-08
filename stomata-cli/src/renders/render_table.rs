@@ -1,7 +1,11 @@
-use ratatui::{layout::Constraint, style::{Color, Style}, widgets::{Block, Borders, Cell, Row, Table}};
+use ratatui::{
+    layout::Constraint,
+    style::{Color, Style},
+    widgets::{Block, Borders, Cell, Row, Table},
+};
 use stomata_core::collectors::structs::ProcessData;
 
-use crate::structs::TableRow;
+use crate::{structs::TableRow, utils::bytes_to_mb};
 
 impl TableRow for ProcessData {
     fn to_cells(&self) -> Vec<Cell<'_>> {
@@ -9,33 +13,27 @@ impl TableRow for ProcessData {
             Cell::from(self.pid.to_string()),
             Cell::from(self.name.clone()),
             Cell::from(format!("{:.2}%", self.cpu_usage)),
-            Cell::from(format!("{} MB", self.memory)),
-            Cell::from(self.status.clone())
+            Cell::from(format!("{} MB", bytes_to_mb(self.memory))),
+            Cell::from(self.status.clone()),
         ]
     }
 
     fn column_widths() -> Vec<Constraint> {
         vec![
-            Constraint::Length(8),   // PID
-            Constraint::Min(20),     // Name (flexible)
-            Constraint::Length(10),  // CPU%
-            Constraint::Length(12),  // Memory
-            Constraint::Length(10),  // Status
+            Constraint::Length(8),  // PID
+            Constraint::Min(20),    // Name (flexible)
+            Constraint::Length(10), // CPU%
+            Constraint::Length(12), // Memory
+            Constraint::Length(10), // Status
         ]
     }
 }
 
-pub fn render_table<'a, T>(
-    headers: Vec<&'a str>,
-    items: Vec<&'a T>,
-    title: &'a str
-) -> Table<'a>
-    where
-        T: TableRow
-    {
-    let header_style = Style::default()
-        .fg(Color::White)
-        .bg(Color::Black);
+pub fn render_table<'a, T>(headers: Vec<&'a str>, items: &'a [T], title: &'a str) -> Table<'a>
+where
+    T: TableRow,
+{
+    let header_style = Style::default().fg(Color::White).bg(Color::Black);
 
     let header = headers
         .into_iter()

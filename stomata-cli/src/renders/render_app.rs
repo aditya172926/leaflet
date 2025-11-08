@@ -16,6 +16,7 @@ use crate::{
         render_bar::vertical_bar_chart,
         render_gauge::{self, render_gauge},
         render_paragraph::paragraph_widget,
+        render_table::render_table,
     },
     structs::{Cli, Page},
     utils::bytes_to_mb,
@@ -87,7 +88,9 @@ impl App {
             Page::System => {
                 let _ = self.display_system_info(frame, chunks[1]);
             }
-            Page::Processes => {}
+            Page::Processes => {
+                let _ = self.display_processes(frame, chunks[1]);
+            }
         }
     }
 
@@ -215,6 +218,9 @@ impl App {
 
     fn display_processes(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
         let processes = self.metrics_collector.get_running_processes();
+        let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
+        let table_widget = render_table(headers, &processes, "Processes");
+        frame.render_widget(table_widget, area);
         Ok(())
     }
     // handle quit events to close the new terminal

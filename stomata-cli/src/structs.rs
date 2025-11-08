@@ -13,7 +13,7 @@ pub struct Cli {
 pub enum Page {
     System,
     Metrics,
-    Processes
+    Processes,
 }
 
 impl Page {

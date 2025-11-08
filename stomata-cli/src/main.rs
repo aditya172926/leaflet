@@ -1,7 +1,11 @@
-use std::{thread::sleep, time::Duration};
+use std::{
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 use crate::{renders::render_app::App, structs::Cli};
 use clap::Parser;
+use ratatui::crossterm::event::{self, Event};
 
 mod constants;
 mod renders;
@@ -15,18 +19,28 @@ async fn main() -> anyhow::Result<()> {
     let mut terminal = ratatui::init();
 
     // get the refresh interval from the cli arg. Default 1000 ms
-    let refresh_interval = cli.interval;
+    let refresh_interval = Duration::from_millis(cli.interval);
+    let mut last_tick = Instant::now();
 
     // main render loop
     while app.render {
-        // draw
-        terminal.draw(|frame| app.render(frame))?;
+        let timeout = refresh_interval
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or(Duration::from_secs(0));
 
-        // handle events
-        app.handle_events()?;
+        // poll for inputs only until timeout
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                // handle events
+                app.handle_events(key)?;
+            }
+        }
 
-        // sleep for refresh interval
-        sleep(Duration::from_millis(refresh_interval));
+        if last_tick.elapsed() >= refresh_interval {
+            // draw
+            terminal.draw(|frame| app.render(frame))?;
+            last_tick = Instant::now();
+        }
     }
 
     Ok(())

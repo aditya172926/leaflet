@@ -2,7 +2,7 @@ use std::{collections::VecDeque, time::Duration};
 
 use ratatui::{
     Frame,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
@@ -30,6 +30,7 @@ pub struct App {
     pub metrics_collector: SystemCollector,
     pub tab_index: usize,
     pub current_page: Page,
+    pub process_scroll: usize,
 }
 
 impl App {
@@ -43,6 +44,7 @@ impl App {
             metrics_collector: collector,
             tab_index: 0,
             current_page: Page::System,
+            process_scroll: 0,
         }
     }
 
@@ -219,37 +221,55 @@ impl App {
     fn display_processes(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
         let processes = self.metrics_collector.get_running_processes();
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
-        let table_widget = render_table(headers, &processes, "Processes");
+        let visible_rows = area.height.saturating_sub(4) as usize;
+        let table_widget = render_table(
+            headers,
+            &processes,
+            "Processes",
+            self.process_scroll,
+            visible_rows,
+        );
         frame.render_widget(table_widget, area);
         Ok(())
     }
     // handle quit events to close the new terminal
-    pub fn handle_events(&mut self) -> anyhow::Result<()> {
-        if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') => {
-                            self.render = false;
-                            ratatui::restore();
-                        }
-                        KeyCode::Right | KeyCode::Tab => {
-                            self.next_tab();
-                        }
-                        KeyCode::Left => {
-                            self.previous_tab();
-                        }
-                        KeyCode::Char('1') => {
-                            self.tab_index = 0;
-                            self.current_page = Page::System;
-                        }
-                        KeyCode::Char('2') => {
-                            self.tab_index = 1;
-                            self.current_page = Page::Metrics;
-                        }
-                        _ => {}
+    pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
+        if key.kind == KeyEventKind::Press {
+            match key.code {
+                KeyCode::Char('q') => {
+                    self.render = false;
+                    ratatui::restore();
+                }
+                KeyCode::Right | KeyCode::Tab => {
+                    self.next_tab();
+                }
+                KeyCode::Left => {
+                    self.previous_tab();
+                }
+                KeyCode::Char('1') => {
+                    self.tab_index = 0;
+                    self.current_page = Page::System;
+                }
+                KeyCode::Char('2') => {
+                    self.tab_index = 1;
+                    self.current_page = Page::Metrics;
+                }
+                KeyCode::Down => {
+                    if self.current_page == Page::Processes {
+                        let max_processes = match self.get_latest_metric() {
+                            Some(system_metrics) => system_metrics.processes_count,
+                            None => 10 as usize,
+                        };
+                        self.process_scroll =
+                            self.process_scroll.saturating_add(1).min(max_processes);
                     }
                 }
+                KeyCode::Up => {
+                    if self.current_page == Page::Processes {
+                        self.process_scroll = self.process_scroll.saturating_sub(1);
+                    }
+                }
+                _ => {}
             }
         }
         Ok(())

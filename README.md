@@ -8,7 +8,7 @@
 </div>
 
 <div align="center">
-![stomata gif](https://github.com/user-attachments/assets/411bd137-186e-4276-bac1-e586c87c7761)
+<img src="https://github.com/user-attachments/assets/411bd137-186e-4276-bac1-e586c87c7761" alt="Quick Demo showing stomata cli" />
 </div>
 
 > **Note**: Stomata is currently under development and more features and fixes are upcoming.

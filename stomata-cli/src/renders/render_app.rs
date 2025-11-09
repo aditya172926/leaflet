@@ -254,6 +254,10 @@ impl App {
                     self.tab_index = 1;
                     self.current_page = Page::Metrics;
                 }
+                KeyCode::Char('3') => {
+                    self.tab_index = 2;
+                    self.current_page = Page::Processes;
+                }
                 KeyCode::Down => {
                     if self.current_page == Page::Processes {
                         let max_processes = match self.get_latest_metric() {

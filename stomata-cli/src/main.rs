@@ -33,6 +33,8 @@ async fn main() -> anyhow::Result<()> {
             if let Event::Key(key) = event::read()? {
                 // handle events
                 app.handle_events(key)?;
+                // redraw immediately after an event
+                terminal.draw(|frame| app.render(frame))?;
             }
         }
 

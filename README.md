@@ -1,9 +1,18 @@
-# Stomata
+<div align="center">
+  <h1>Stomata</h1>
 
-> **Note**: Stomata is currently under development and more features and fixes are upcoming 
+  <p>
+    A CLI tool for **collecting and visualizing system metrics** in real-time. It provides a lightweight, terminal-based dashboard to monitor memory, swap, CPU, and other resources with a clean interface.
+  </p>
 
-**Stomata** is a CLI tool for **collecting and visualizing system metrics** in real-time. It provides a lightweight, terminal-based dashboard to monitor memory, swap, CPU, and other resources with a clean interface.
-Right now Stomata is very minimalistic and will introduct new features as the development goes on.
+</div>
+
+<div align="center">
+<img src="https://github.com/user-attachments/assets/411bd137-186e-4276-bac1-e586c87c7761" alt="Quick Demo showing stomata cli" />
+</div>
+
+> **Note**: Stomata is currently under development and more features and fixes are upcoming.
+Right now Stomata is very minimalistic and will introduce new features as the development goes on.
 
 ---
 
@@ -44,10 +53,6 @@ To run the cli, use the command
 stomata --interval 1000
 ```
 interval is an optional arguement to give. It is the refresh rate of the metrics to be fetched and rendered on the terminal UI.
-
-## How it looks?
-Right now stomata just tracks Memory consumption and swap consumption and displays it in a TUI. This is what it looks like
-![stomata gif](https://github.com/user-attachments/assets/411bd137-186e-4276-bac1-e586c87c7761)
 
 ## Contributing
 This is a very early stage repository. But feel free to suggest features and make issues before starting to work on a pull request.

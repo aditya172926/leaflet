@@ -1,8 +1,8 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sysinfo::System;
+use sysinfo::{Process, System};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
     pub cpu_count: usize,
@@ -20,6 +20,27 @@ pub struct SystemInfo {
     pub os_version: String,
     pub kernel_version: String,
     pub hostname: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProcessData {
+    pub pid: u32,
+    pub name: String,
+    pub cpu_usage: f32,
+    pub memory: u64,
+    pub status: String,
+}
+
+impl From<&Process> for ProcessData {
+    fn from(process: &Process) -> Self {
+        ProcessData {
+            pid: process.pid().as_u32(),
+            name: process.name().to_string_lossy().to_string(),
+            cpu_usage: process.cpu_usage(),
+            memory: process.memory(),
+            status: process.status().to_string(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -42,7 +63,7 @@ impl SystemCollector {
     }
 
     pub fn collect(&mut self) -> Result<SystemMetrics> {
-        self.system.refresh_all();
+        self.system.refresh_all(); // we might not want to do this, unnecessary overhead
         let cpu_count = self.system.cpus().len();
         let cpu_usage = self.system.global_cpu_usage();
         let memory_used = self.system.used_memory();
@@ -70,5 +91,15 @@ impl SystemCollector {
             kernel_version: System::kernel_version().unwrap_or_else(|| "Unknown".to_string()),
             hostname: System::host_name().unwrap_or_else(|| "Unknown".to_string()),
         }
+    }
+
+    pub fn get_running_processes(&self) -> Vec<ProcessData> {
+        let processes: Vec<ProcessData> = self
+            .system
+            .processes()
+            .values()
+            .map(ProcessData::from)
+            .collect();
+        return processes;
     }
 }

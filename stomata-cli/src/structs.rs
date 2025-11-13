@@ -1,5 +1,8 @@
+use std::collections::VecDeque;
+
 use clap::Parser;
 use ratatui::{layout::Constraint, widgets::Cell};
+use stomata_core::collectors::structs::SystemMetrics;
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -7,6 +10,8 @@ use ratatui::{layout::Constraint, widgets::Cell};
 pub struct Cli {
     #[arg(short, long, default_value_t = 1000)]
     pub interval: u64,
+    #[arg(short, long, default_value_t = false)]
+    pub store: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,4 +40,10 @@ impl Page {
 pub trait TableRow {
     fn to_cells(&self) -> Vec<Cell<'_>>;
     fn column_widths() -> Vec<Constraint>;
+}
+
+#[derive(Debug)]
+pub enum MetricsStorage {
+    Single(SystemMetrics),
+    History(VecDeque<SystemMetrics>),
 }

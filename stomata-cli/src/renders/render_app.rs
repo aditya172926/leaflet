@@ -8,7 +8,9 @@ use ratatui::{
     text::Line,
     widgets::{Block, Borders, Tabs},
 };
-use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
+use stomata_core::collectors::structs::{
+    MetricsCategory, SystemCollector, SystemInfo, SystemMetrics,
+};
 
 use crate::{
     constants::MAX_HISTORY,
@@ -18,44 +20,53 @@ use crate::{
         render_paragraph::paragraph_widget,
         render_table::render_table,
     },
-    structs::{Cli, Page},
+    structs::{Cli, MetricsStorage, Page},
     utils::bytes_to_mb,
 };
 
 #[derive(Debug)]
 pub struct App {
     pub render: bool,
-    pub metrics_history: VecDeque<SystemMetrics>,
+    pub metrics_history: MetricsStorage,
     pub system_info: SystemInfo,
     pub metrics_collector: SystemCollector,
     pub tab_index: usize,
     pub current_page: Page,
     pub process_scroll: usize,
+    pub store_data: bool,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(store_metrics: bool) -> Self {
         let collector = SystemCollector::new();
         let system_info = collector.system_info();
+        let metrics = match store_metrics {
+            true => MetricsStorage::History(VecDeque::<SystemMetrics>::with_capacity(MAX_HISTORY)),
+            false => MetricsStorage::Single(SystemMetrics::default()),
+        };
         Self {
             render: true,
-            metrics_history: VecDeque::with_capacity(MAX_HISTORY),
+            metrics_history: metrics,
             system_info,
             metrics_collector: collector,
             tab_index: 0,
             current_page: Page::System,
             process_scroll: 0,
+            store_data: store_metrics, // by default don't store history data
         }
     }
 
-    pub fn update_metrics(&mut self) {
-        match self.metrics_collector.collect() {
-            Ok(collected_metrics) => {
-                if self.metrics_history.len() >= MAX_HISTORY {
-                    self.metrics_history.pop_front();
+    pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
+        match self.metrics_collector.collect(refresh_category) {
+            Ok(collected_metrics) => match &mut self.metrics_history {
+                MetricsStorage::History(history) => {
+                    if history.len() >= MAX_HISTORY {
+                        history.pop_front();
+                    }
+                    history.push_back(collected_metrics);
                 }
-                self.metrics_history.push_back(collected_metrics);
-            }
+                MetricsStorage::Single(metric) => *metric = collected_metrics,
+            },
             Err(e) => {
                 eprintln!("Error collecting metrics: {:?}", e);
             }
@@ -63,7 +74,10 @@ impl App {
     }
 
     pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
-        self.metrics_history.back()
+        match &self.metrics_history {
+            MetricsStorage::History(history) => history.back(),
+            MetricsStorage::Single(metric) => Some(metric),
+        }
     }
 
     // go to the next tab
@@ -136,7 +150,7 @@ impl App {
     }
 
     fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        self.update_metrics();
+        self.update_metrics(MetricsCategory::Basic);
 
         let latest_metric = match self.get_latest_metric() {
             Some(metric) => metric,
@@ -219,8 +233,12 @@ impl App {
     }
 
     // display the current running processes
-    fn display_processes(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        let processes = self.metrics_collector.get_running_processes();
+    fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+        self.update_metrics(MetricsCategory::Processes); // update processes only
+        let processes = match self.get_latest_metric() {
+            Some(metrics) => metrics.processes.clone(),
+            None => Vec::new(),
+        };
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
         let visible_rows = area.height.saturating_sub(4) as usize;
         let table_widget = render_table(

@@ -1,6 +1,14 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sysinfo::{Process, System};
+use sysinfo::{Process, ProcessRefreshKind, System};
+
+pub enum MetricsCategory {
+    Processes,
+    Memory,
+    CPU,
+    AllResources, // refreshes everything
+    Basic,        // refreshes CPU + Memory usage
+}
 
 #[derive(Debug, Default)]
 pub struct SystemMetrics {
@@ -12,6 +20,7 @@ pub struct SystemMetrics {
     pub swap_used: u64,
     pub swap_total: u64,
     pub processes_count: usize,
+    pub processes: Vec<ProcessData>,
 }
 
 #[derive(Debug, Clone)]
@@ -62,8 +71,33 @@ impl SystemCollector {
         Self { system }
     }
 
-    pub fn collect(&mut self) -> Result<SystemMetrics> {
-        self.system.refresh_all(); // we might not want to do this, unnecessary overhead
+    pub fn collect(&mut self, refresh_kind: MetricsCategory) -> Result<SystemMetrics> {
+        let mut processes: Vec<ProcessData> = Vec::new();
+        match refresh_kind {
+            MetricsCategory::Processes => {
+                let processes_updated = self.system.refresh_processes_specifics(
+                    sysinfo::ProcessesToUpdate::All,
+                    true,
+                    ProcessRefreshKind::everything().without_tasks(),
+                );
+                if processes_updated > 0 {
+                    processes = self.get_running_processes();
+                }
+            }
+            MetricsCategory::CPU => {
+                self.system.refresh_cpu_usage();
+            }
+            MetricsCategory::Memory => {
+                self.system.refresh_memory(); // includes swap too
+            }
+            MetricsCategory::AllResources => {
+                self.system.refresh_all();
+            }
+            MetricsCategory::Basic => {
+                self.system.refresh_memory();
+                self.system.refresh_cpu_usage();
+            }
+        };
         let cpu_count = self.system.cpus().len();
         let cpu_usage = self.system.global_cpu_usage();
         let memory_used = self.system.used_memory();
@@ -81,6 +115,7 @@ impl SystemCollector {
             swap_used,
             swap_total,
             processes_count,
+            processes,
         })
     }
 

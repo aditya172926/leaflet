@@ -15,7 +15,8 @@ mod utils;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    let mut app = App::new();
+    let store_metrics_data = cli.store;
+    let mut app = App::new(store_metrics_data);
     let mut terminal = ratatui::init();
 
     // get the refresh interval from the cli arg. Default 1000 ms

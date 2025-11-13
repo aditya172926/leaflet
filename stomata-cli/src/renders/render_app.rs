@@ -211,8 +211,10 @@ impl App {
             latest_metric.swap_used, latest_metric.swap_total, swap_used,
         );
 
-        let processes_count_text =
-            format!("Current Processes count {}", latest_metric.processes_count);
+        let processes_count_text = format!(
+            "CPU count: {}\nCurrent Processes count {}",
+            latest_metric.cpu_count, latest_metric.processes_count
+        );
         let process_paragraph = paragraph_widget(&processes_count_text, "Processes Count");
 
         let paragraph = paragraph_widget(&text, "Memory Info");
@@ -251,6 +253,7 @@ impl App {
         frame.render_widget(table_widget, area);
         Ok(())
     }
+
     // handle quit events to close the new terminal
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
         if key.kind == KeyEventKind::Press {

@@ -48,11 +48,18 @@ impl App {
         }
     }
 
-    pub fn update_metrics(&mut self, metrics: SystemMetrics) {
-        if self.metrics_history.len() >= MAX_HISTORY {
-            self.metrics_history.pop_front();
-        }
-        self.metrics_history.push_back(metrics);
+    pub fn update_metrics(&mut self) {
+        match self.metrics_collector.collect() {
+            Ok(collected_metrics) => {
+                if self.metrics_history.len() >= MAX_HISTORY {
+                    self.metrics_history.pop_front();
+                }
+                self.metrics_history.push_back(collected_metrics);
+            }
+            Err(e) => {
+                eprintln!("Error collecting metrics: {:?}", e);
+            }
+        };
     }
 
     pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
@@ -129,14 +136,7 @@ impl App {
     }
 
     fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        match self.metrics_collector.collect() {
-            Ok(collected_metrics) => {
-                self.update_metrics(collected_metrics);
-            }
-            Err(e) => {
-                eprintln!("Error collecting metrics: {:?}", e);
-            }
-        };
+        self.update_metrics();
 
         let latest_metric = match self.get_latest_metric() {
             Some(metric) => metric,
@@ -218,6 +218,7 @@ impl App {
         Ok(())
     }
 
+    // display the current running processes
     fn display_processes(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
         let processes = self.metrics_collector.get_running_processes();
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];

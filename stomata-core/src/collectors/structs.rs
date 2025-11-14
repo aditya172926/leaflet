@@ -3,7 +3,8 @@ use chrono::{DateTime, Utc};
 use sysinfo::{Process, ProcessRefreshKind, System};
 
 pub enum MetricsCategory {
-    Processes,
+    ProcessesWithoutTasks, // refreshes processes but not tasks
+    Processes,             // refreshes processes with tasks
     Memory,
     CPU,
     AllResources, // refreshes everything
@@ -74,11 +75,21 @@ impl SystemCollector {
     pub fn collect(&mut self, refresh_kind: MetricsCategory) -> Result<SystemMetrics> {
         let mut processes: Vec<ProcessData> = Vec::new();
         match refresh_kind {
-            MetricsCategory::Processes => {
+            MetricsCategory::ProcessesWithoutTasks => {
                 let processes_updated = self.system.refresh_processes_specifics(
                     sysinfo::ProcessesToUpdate::All,
                     true,
                     ProcessRefreshKind::everything().without_tasks(),
+                );
+                if processes_updated > 0 {
+                    processes = self.get_running_processes();
+                }
+            }
+            MetricsCategory::Processes => {
+                let processes_updated = self.system.refresh_processes_specifics(
+                    sysinfo::ProcessesToUpdate::All,
+                    true,
+                    ProcessRefreshKind::everything(),
                 );
                 if processes_updated > 0 {
                     processes = self.get_running_processes();

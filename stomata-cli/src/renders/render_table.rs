@@ -29,14 +29,7 @@ impl TableRow for ProcessData {
     }
 }
 
-pub fn render_table<'a, T>(
-    headers: Vec<&'a str>,
-    items: &'a [T],
-    title: &'a str,
-    scroll_offset: usize,
-    visible_rows: usize,
-    selected_row: Option<usize>,
-) -> Table<'a>
+pub fn render_table<'a, T>(headers: Vec<&'a str>, items: &'a [T], title: &'a str) -> Table<'a>
 where
     T: TableRow,
 {
@@ -51,8 +44,6 @@ where
 
     let rows: Vec<Row> = items
         .iter()
-        .skip(scroll_offset)
-        .take(visible_rows)
         .map(|item| {
             let cells = item.to_cells();
             Row::new(cells).height(1)

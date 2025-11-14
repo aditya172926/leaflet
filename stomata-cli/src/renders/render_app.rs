@@ -32,7 +32,6 @@ pub struct App {
     pub metrics_collector: SystemCollector,
     pub tab_index: usize,
     pub current_page: Page,
-    pub process_scroll: usize,
     pub store_data: bool,
     pub ui_state: UIState,
 }
@@ -52,7 +51,6 @@ impl App {
             metrics_collector: collector,
             tab_index: 0,
             current_page: Page::System,
-            process_scroll: 0,
             store_data: store_metrics, // by default don't store history data
             ui_state: UIState::default(),
         }
@@ -238,22 +236,16 @@ impl App {
 
     // display the current running processes
     fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        self.update_metrics(MetricsCategory::Processes); // update processes only
+        self.update_metrics(MetricsCategory::ProcessesWithoutTasks); // update processes only
+
         let processes = match self.get_latest_metric() {
             Some(metrics) => metrics.processes.clone(),
             None => Vec::new(),
         };
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
         let visible_rows = area.height.saturating_sub(4) as usize;
-        let selected_row = self.ui_state.process_list.selected();
-        let table_widget = render_table(
-            headers,
-            &processes,
-            "Processes",
-            self.process_scroll,
-            visible_rows,
-            selected_row,
-        );
+
+        let table_widget = render_table(headers, &processes, "Processes");
         frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);
         Ok(())
     }
@@ -290,13 +282,18 @@ impl App {
                             Some(system_metrics) => system_metrics.processes_count,
                             None => 10 as usize,
                         };
-                        self.process_scroll =
-                            self.process_scroll.saturating_add(1).min(max_processes);
+                        if let Some(selected_row) = self.ui_state.process_list.selected() {
+                            let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
+                            self.ui_state.process_list.select(Some(next_row));
+                        }
                     }
                 }
                 KeyCode::Up => {
                     if self.current_page == Page::Processes {
-                        self.process_scroll = self.process_scroll.saturating_sub(1);
+                        if let Some(selected_row) = self.ui_state.process_list.selected() {
+                            let next_row = selected_row.saturating_sub(1);
+                            self.ui_state.process_list.select(Some(next_row));
+                        }
                     }
                 }
                 _ => {}

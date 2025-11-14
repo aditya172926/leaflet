@@ -32,7 +32,7 @@ pub struct SystemInfo {
     pub hostname: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProcessData {
     pub pid: u32,
     pub name: String,

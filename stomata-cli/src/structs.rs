@@ -5,7 +5,7 @@ use ratatui::{
     layout::Constraint,
     widgets::{Cell, ListState, TableState},
 };
-use stomata_core::collectors::structs::SystemMetrics;
+use stomata_core::collectors::structs::{ProcessData, SystemMetrics};
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -17,11 +17,12 @@ pub struct Cli {
     pub store: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Page {
     System,
     Metrics,
     Processes,
+    SingleProcess(ProcessData), // pid
 }
 
 impl Page {

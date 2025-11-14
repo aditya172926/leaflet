@@ -1,5 +1,6 @@
 use std::{collections::VecDeque, time::Duration};
 
+use anyhow::Result;
 use ratatui::{
     Frame,
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
@@ -18,6 +19,7 @@ use crate::{
         render_bar::vertical_bar_chart,
         render_gauge::{self, render_gauge},
         render_paragraph::paragraph_widget,
+        render_process_metrics::SingleProcessDisplay,
         render_table::render_table,
     },
     structs::{Cli, MetricsStorage, Page, UIState},
@@ -104,7 +106,7 @@ impl App {
         // render tabs
         self.render_tabs(frame, chunks[0]);
 
-        match self.current_page {
+        match &self.current_page {
             Page::Metrics => {
                 let _ = self.draw_chart(frame, chunks[1]);
             }
@@ -113,6 +115,9 @@ impl App {
             }
             Page::Processes => {
                 let _ = self.display_processes(frame, chunks[1]);
+            }
+            Page::SingleProcess(pd) => {
+                let _ = pd.display_process_metrics(frame, chunks[1]);
             }
         }
     }
@@ -253,52 +258,73 @@ impl App {
     // handle quit events to close the new terminal
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
         if key.kind == KeyEventKind::Press {
-            match key.code {
-                KeyCode::Char('q') => {
-                    self.render = false;
-                    ratatui::restore();
-                }
-                KeyCode::Right | KeyCode::Tab => {
-                    self.next_tab();
-                }
-                KeyCode::Left => {
-                    self.previous_tab();
-                }
-                KeyCode::Char('1') => {
-                    self.tab_index = 0;
-                    self.current_page = Page::System;
-                }
-                KeyCode::Char('2') => {
-                    self.tab_index = 1;
-                    self.current_page = Page::Metrics;
-                }
-                KeyCode::Char('3') => {
-                    self.tab_index = 2;
-                    self.current_page = Page::Processes;
-                }
-                KeyCode::Down => {
-                    if self.current_page == Page::Processes {
-                        let max_processes = match self.get_latest_metric() {
-                            Some(system_metrics) => system_metrics.processes_count,
-                            None => 10 as usize,
-                        };
-                        if let Some(selected_row) = self.ui_state.process_list.selected() {
-                            let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
-                            self.ui_state.process_list.select(Some(next_row));
-                        }
-                    }
-                }
-                KeyCode::Up => {
-                    if self.current_page == Page::Processes {
-                        if let Some(selected_row) = self.ui_state.process_list.selected() {
-                            let next_row = selected_row.saturating_sub(1);
-                            self.ui_state.process_list.select(Some(next_row));
-                        }
-                    }
+            self.process_global_events(key);
+            match self.current_page {
+                Page::Processes => {
+                    self.process_page_events(key);
                 }
                 _ => {}
             }
         }
         Ok(())
+    }
+
+    fn process_global_events(&mut self, key: KeyEvent) {
+        match key.code {
+            KeyCode::Char('q') => {
+                self.render = false;
+                ratatui::restore();
+            }
+            KeyCode::Right | KeyCode::Tab => {
+                self.next_tab();
+            }
+            KeyCode::Left => {
+                self.previous_tab();
+            }
+            KeyCode::Char('1') => {
+                self.tab_index = 0;
+                self.current_page = Page::System;
+            }
+            KeyCode::Char('2') => {
+                self.tab_index = 1;
+                self.current_page = Page::Metrics;
+            }
+            KeyCode::Char('3') => {
+                self.tab_index = 2;
+                self.current_page = Page::Processes;
+            }
+            _ => {}
+        }
+    }
+
+    fn process_page_events(&mut self, key: KeyEvent) {
+        match key.code {
+            KeyCode::Down => {
+                let max_processes = match self.get_latest_metric() {
+                    Some(system_metrics) => system_metrics.processes_count,
+                    None => 10 as usize,
+                };
+                if let Some(selected_row) = self.ui_state.process_list.selected() {
+                    let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
+                    self.ui_state.process_list.select(Some(next_row));
+                }
+            }
+            KeyCode::Up => {
+                if let Some(selected_row) = self.ui_state.process_list.selected() {
+                    let next_row = selected_row.saturating_sub(1);
+                    self.ui_state.process_list.select(Some(next_row));
+                }
+            }
+            KeyCode::Enter => {
+                if let Some(selected_process) = self.ui_state.process_list.selected() {
+                    if let Some(selected_process_data) = self.get_latest_metric() {
+                        let process_data = &selected_process_data.processes[selected_process];
+                        // switch to a new page with path process/pid to show process_data
+                        self.current_page = Page::SingleProcess(process_data.clone());
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 }

@@ -1,7 +1,10 @@
 use std::collections::VecDeque;
 
 use clap::Parser;
-use ratatui::{layout::Constraint, widgets::Cell};
+use ratatui::{
+    layout::Constraint,
+    widgets::{Cell, ListState, TableState},
+};
 use stomata_core::collectors::structs::SystemMetrics;
 
 #[derive(Parser, Debug)]
@@ -46,4 +49,17 @@ pub trait TableRow {
 pub enum MetricsStorage {
     Single(SystemMetrics),
     History(VecDeque<SystemMetrics>),
+}
+
+#[derive(Debug)]
+pub struct UIState {
+    pub process_list: TableState,
+}
+
+impl Default for UIState {
+    fn default() -> Self {
+        Self {
+            process_list: TableState::default().with_selected(0),
+        }
+    }
 }

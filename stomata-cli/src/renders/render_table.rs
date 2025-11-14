@@ -1,7 +1,7 @@
 use ratatui::{
     layout::Constraint,
     style::{Color, Style},
-    widgets::{Block, Borders, Cell, Row, Table},
+    widgets::{Block, Borders, Cell, Row, Table, TableState},
 };
 use stomata_core::collectors::structs::ProcessData;
 
@@ -35,6 +35,7 @@ pub fn render_table<'a, T>(
     title: &'a str,
     scroll_offset: usize,
     visible_rows: usize,
+    selected_row: Option<usize>,
 ) -> Table<'a>
 where
     T: TableRow,
@@ -59,6 +60,8 @@ where
         .collect();
 
     Table::new(rows, T::column_widths())
+        .row_highlight_style(Style::default().bg(Color::White).fg(Color::Black))
+        .highlight_symbol(">>")
         .header(header)
         .block(Block::default().title(title).borders(Borders::ALL))
         .style(Style::default().fg(Color::White))

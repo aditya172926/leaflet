@@ -20,7 +20,7 @@ use crate::{
         render_paragraph::paragraph_widget,
         render_table::render_table,
     },
-    structs::{Cli, MetricsStorage, Page},
+    structs::{Cli, MetricsStorage, Page, UIState},
     utils::bytes_to_mb,
 };
 
@@ -34,6 +34,7 @@ pub struct App {
     pub current_page: Page,
     pub process_scroll: usize,
     pub store_data: bool,
+    pub ui_state: UIState,
 }
 
 impl App {
@@ -53,6 +54,7 @@ impl App {
             current_page: Page::System,
             process_scroll: 0,
             store_data: store_metrics, // by default don't store history data
+            ui_state: UIState::default(),
         }
     }
 
@@ -243,14 +245,16 @@ impl App {
         };
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
         let visible_rows = area.height.saturating_sub(4) as usize;
+        let selected_row = self.ui_state.process_list.selected();
         let table_widget = render_table(
             headers,
             &processes,
             "Processes",
             self.process_scroll,
             visible_rows,
+            selected_row,
         );
-        frame.render_widget(table_widget, area);
+        frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);
         Ok(())
     }
 

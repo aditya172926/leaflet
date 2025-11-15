@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sysinfo::{Process, ProcessRefreshKind, System};
+use sysinfo::{DiskUsage, Pid, Process, ProcessRefreshKind, System};
 
 pub enum MetricsCategory {
     ProcessesWithoutTasks, // refreshes processes but not tasks
@@ -9,6 +9,40 @@ pub enum MetricsCategory {
     CPU,
     AllResources, // refreshes everything
     Basic,        // refreshes CPU + Memory usage
+}
+
+impl MetricsCategory {
+    pub fn refresh_metrics(&self, system: &mut System) {
+        match self {
+            MetricsCategory::ProcessesWithoutTasks => {
+                let processes_updated = system.refresh_processes_specifics(
+                    sysinfo::ProcessesToUpdate::All,
+                    true,
+                    ProcessRefreshKind::everything().without_tasks(),
+                );
+            }
+            MetricsCategory::Processes => {
+                let processes_updated = system.refresh_processes_specifics(
+                    sysinfo::ProcessesToUpdate::All,
+                    true,
+                    ProcessRefreshKind::everything(),
+                );
+            }
+            MetricsCategory::CPU => {
+                system.refresh_cpu_usage();
+            }
+            MetricsCategory::Memory => {
+                system.refresh_memory(); // includes swap too
+            }
+            MetricsCategory::AllResources => {
+                system.refresh_all();
+            }
+            MetricsCategory::Basic => {
+                system.refresh_memory();
+                system.refresh_cpu_usage();
+            }
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -74,40 +108,16 @@ impl SystemCollector {
 
     pub fn collect(&mut self, refresh_kind: MetricsCategory) -> Result<SystemMetrics> {
         let mut processes: Vec<ProcessData> = Vec::new();
+        refresh_kind.refresh_metrics(&mut self.system);
+
         match refresh_kind {
             MetricsCategory::ProcessesWithoutTasks => {
-                let processes_updated = self.system.refresh_processes_specifics(
-                    sysinfo::ProcessesToUpdate::All,
-                    true,
-                    ProcessRefreshKind::everything().without_tasks(),
-                );
-                if processes_updated > 0 {
-                    processes = self.get_running_processes();
-                }
+                processes = self.get_running_processes();
             }
             MetricsCategory::Processes => {
-                let processes_updated = self.system.refresh_processes_specifics(
-                    sysinfo::ProcessesToUpdate::All,
-                    true,
-                    ProcessRefreshKind::everything(),
-                );
-                if processes_updated > 0 {
-                    processes = self.get_running_processes();
-                }
+                processes = self.get_running_processes();
             }
-            MetricsCategory::CPU => {
-                self.system.refresh_cpu_usage();
-            }
-            MetricsCategory::Memory => {
-                self.system.refresh_memory(); // includes swap too
-            }
-            MetricsCategory::AllResources => {
-                self.system.refresh_all();
-            }
-            MetricsCategory::Basic => {
-                self.system.refresh_memory();
-                self.system.refresh_cpu_usage();
-            }
+            _ => {}
         };
         let cpu_count = self.system.cpus().len();
         let cpu_usage = self.system.global_cpu_usage();
@@ -147,5 +157,10 @@ impl SystemCollector {
             .map(ProcessData::from)
             .collect();
         return processes;
+    }
+
+    pub fn get_process_for_pid(&self, pid: u32) -> Option<&Process> {
+        let process = self.system.process(Pid::from_u32(pid));
+        process
     }
 }

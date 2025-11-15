@@ -4,7 +4,8 @@ use sysinfo::{DiskUsage, Pid, Process, ProcessRefreshKind, System};
 
 pub enum MetricsCategory {
     ProcessesWithoutTasks, // refreshes processes but not tasks
-    Processes,             // refreshes processes with tasks
+    Processes,             // refreshes all processes with tasks
+    ProcessWithPid(u32),
     Memory,
     CPU,
     AllResources, // refreshes everything
@@ -27,6 +28,9 @@ impl MetricsCategory {
                     true,
                     ProcessRefreshKind::everything(),
                 );
+            }
+            MetricsCategory::ProcessWithPid(pid) => {
+                system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[Pid::from_u32(*pid)]), true);
             }
             MetricsCategory::CPU => {
                 system.refresh_cpu_usage();
@@ -159,7 +163,8 @@ impl SystemCollector {
         return processes;
     }
 
-    pub fn get_process_for_pid(&self, pid: u32) -> Option<&Process> {
+    pub fn get_process_for_pid(&mut self, pid: u32) -> Option<&Process> {
+        MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
         let process = self.system.process(Pid::from_u32(pid));
         process
     }

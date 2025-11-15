@@ -690,6 +690,7 @@ dependencies = [
  "clap",
  "ratatui",
  "stomata-core",
+ "sysinfo",
  "tokio",
 ]
 

@@ -101,7 +101,7 @@ pub struct SingleProcessData<'a> {
     pub start_time: u64,
     pub running_time: u64,
     pub current_working_dir: Option<String>,
-    pub parent_pid: Option<Pid>
+    pub parent_pid: Option<Pid>,
 }
 
 impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
@@ -116,7 +116,7 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
         };
 
         let disk_usage = process.disk_usage();
-        let current_working_dir  = if let Some(cwd) = process.cwd() {
+        let current_working_dir = if let Some(cwd) = process.cwd() {
             Some(cwd.to_string_lossy().to_string())
         } else {
             None
@@ -125,7 +125,6 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
         let running_time = process.run_time();
         let parent_pid = process.parent();
 
-
         SingleProcessData {
             basic_process_data: ProcessData::from(process),
             tasks: tasks,
@@ -133,7 +132,7 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
             start_time,
             running_time,
             current_working_dir,
-            parent_pid
+            parent_pid,
         }
     }
 }

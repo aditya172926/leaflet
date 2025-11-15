@@ -1,2 +1,2 @@
 pub mod display_app;
-pub mod display_process_metrics;
+pub mod display_single_process;

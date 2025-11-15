@@ -1,7 +1,4 @@
-use std::{
-    thread::sleep,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crate::{renders::displays::display_app::App, structs::Cli};
 use clap::Parser;

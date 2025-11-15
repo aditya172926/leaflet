@@ -94,6 +94,50 @@ impl From<&Process> for ProcessData {
     }
 }
 
+pub struct SingleProcessData<'a> {
+    pub basic_process_data: ProcessData,
+    pub tasks: Vec<&'a Process>,
+    pub disk_usage: DiskUsage,
+    pub start_time: u64,
+    pub running_time: u64,
+    pub current_working_dir: Option<String>,
+    pub parent_pid: Option<Pid>
+}
+
+impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
+    fn from((process, system): (&'a Process, &'a System)) -> Self {
+        let tasks = if let Some(task_pids) = process.tasks() {
+            task_pids
+                .iter()
+                .filter_map(|p| system.process(*p))
+                .collect()
+        } else {
+            Vec::new()
+        };
+
+        let disk_usage = process.disk_usage();
+        let current_working_dir  = if let Some(cwd) = process.cwd() {
+            Some(cwd.to_string_lossy().to_string())
+        } else {
+            None
+        };
+        let start_time = process.start_time();
+        let running_time = process.run_time();
+        let parent_pid = process.parent();
+
+
+        SingleProcessData {
+            basic_process_data: ProcessData::from(process),
+            tasks: tasks,
+            disk_usage,
+            start_time,
+            running_time,
+            current_working_dir,
+            parent_pid
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SystemCollector {
     system: System,
@@ -166,9 +210,12 @@ impl SystemCollector {
         return processes;
     }
 
-    pub fn get_process_for_pid(&mut self, pid: u32) -> Option<&Process> {
+    pub fn get_process_for_pid(&mut self, pid: u32) -> Option<SingleProcessData> {
         MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
-        let process = self.system.process(Pid::from_u32(pid));
-        process
+        if let Some(process) = self.system.process(Pid::from_u32(pid)) {
+            Some(SingleProcessData::from((process, &self.system)))
+        } else {
+            None
+        }
     }
 }

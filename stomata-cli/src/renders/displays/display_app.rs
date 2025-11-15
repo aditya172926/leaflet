@@ -16,7 +16,7 @@ use stomata_core::collectors::structs::{
 use crate::{
     constants::MAX_HISTORY,
     renders::{
-        displays::display_process_metrics::SingleProcessDisplay,
+        displays::display_single_process::SingleProcessDisplay,
         render_widgets::{
             render_bar::vertical_bar_chart,
             render_gauge::{self, render_gauge},

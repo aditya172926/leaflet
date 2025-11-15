@@ -30,7 +30,10 @@ impl MetricsCategory {
                 );
             }
             MetricsCategory::ProcessWithPid(pid) => {
-                system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[Pid::from_u32(*pid)]), true);
+                system.refresh_processes(
+                    sysinfo::ProcessesToUpdate::Some(&[Pid::from_u32(*pid)]),
+                    true,
+                );
             }
             MetricsCategory::CPU => {
                 system.refresh_cpu_usage();

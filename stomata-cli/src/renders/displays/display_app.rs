@@ -16,11 +16,13 @@ use stomata_core::collectors::structs::{
 use crate::{
     constants::MAX_HISTORY,
     renders::{
-        render_bar::vertical_bar_chart,
-        render_gauge::{self, render_gauge},
-        render_paragraph::paragraph_widget,
-        render_process_metrics::SingleProcessDisplay,
-        render_table::render_table,
+        displays::display_process_metrics::SingleProcessDisplay,
+        render_widgets::{
+            render_bar::vertical_bar_chart,
+            render_gauge::{self, render_gauge},
+            render_paragraph::paragraph_widget,
+            render_table::render_table,
+        },
     },
     structs::{Cli, MetricsStorage, Page, UIState},
     utils::bytes_to_mb,
@@ -117,7 +119,9 @@ impl App {
                 let _ = self.display_processes(frame, chunks[1]);
             }
             Page::SingleProcess(pd) => {
-                let _ = pd.display_process_metrics(frame, chunks[1]);
+                if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
+                    let _ = process.display_process_metrics(frame, chunks[1]);
+                }
             }
         }
     }

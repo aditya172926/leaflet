@@ -3,9 +3,9 @@ use std::collections::VecDeque;
 use clap::Parser;
 use ratatui::{
     layout::Constraint,
-    widgets::{Cell, ListState, TableState},
+    widgets::{Cell, TableState},
 };
-use stomata_core::collectors::structs::{ProcessData, SystemMetrics};
+use stomata_core::collectors::structs::{ProcessData, SingleProcessData, SystemMetrics};
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -63,4 +63,8 @@ impl Default for UIState {
             process_list: TableState::default().with_selected(0),
         }
     }
+}
+
+pub struct SingleProcessUI<'a> {
+    pub data: SingleProcessData<'a>,
 }

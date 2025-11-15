@@ -16,14 +16,14 @@ impl MetricsCategory {
     pub fn refresh_metrics(&self, system: &mut System) {
         match self {
             MetricsCategory::ProcessesWithoutTasks => {
-                let processes_updated = system.refresh_processes_specifics(
+                let _processes_updated = system.refresh_processes_specifics(
                     sysinfo::ProcessesToUpdate::All,
                     true,
                     ProcessRefreshKind::everything().without_tasks(),
                 );
             }
             MetricsCategory::Processes => {
-                let processes_updated = system.refresh_processes_specifics(
+                let _processes_updated = system.refresh_processes_specifics(
                     sysinfo::ProcessesToUpdate::All,
                     true,
                     ProcessRefreshKind::everything(),
@@ -209,7 +209,7 @@ impl SystemCollector {
         return processes;
     }
 
-    pub fn get_process_for_pid(&mut self, pid: u32) -> Option<SingleProcessData> {
+    pub fn get_process_for_pid(&mut self, pid: u32) -> Option<SingleProcessData<'_>> {
         MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
         if let Some(process) = self.system.process(Pid::from_u32(pid)) {
             Some(SingleProcessData::from((process, &self.system)))

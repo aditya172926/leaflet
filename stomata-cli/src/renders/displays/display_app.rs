@@ -1,9 +1,8 @@
-use std::{collections::VecDeque, time::Duration};
+use std::collections::VecDeque;
 
-use anyhow::Result;
 use ratatui::{
     Frame,
-    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
+    crossterm::event::{KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
@@ -18,13 +17,11 @@ use crate::{
     renders::{
         displays::display_single_process::SingleProcessDisplay,
         render_widgets::{
-            render_bar::vertical_bar_chart,
-            render_gauge::{self, render_gauge},
-            render_paragraph::paragraph_widget,
+            render_gauge::render_gauge, render_paragraph::paragraph_widget,
             render_table::render_table,
         },
     },
-    structs::{Cli, MetricsStorage, Page, UIState},
+    structs::{MetricsStorage, Page, SingleProcessUI, UIState},
     utils::bytes_to_mb,
 };
 
@@ -120,7 +117,8 @@ impl App {
             }
             Page::SingleProcess(pd) => {
                 if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
-                    let _ = process.display_process_metrics(frame, chunks[1]);
+                    let _ =
+                        SingleProcessUI { data: process }.display_process_metrics(frame, chunks[1]);
                 }
             }
         }
@@ -252,7 +250,6 @@ impl App {
             None => Vec::new(),
         };
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
-        let visible_rows = area.height.saturating_sub(4) as usize;
 
         let table_widget = render_table(headers, &processes, "Processes");
         frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);

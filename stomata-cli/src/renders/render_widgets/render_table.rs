@@ -1,9 +1,10 @@
 use ratatui::{
     layout::Constraint,
     style::{Color, Style},
-    widgets::{Block, Borders, Cell, Row, Table, TableState},
+    widgets::{Block, Borders, Cell, Row, Table},
 };
 use stomata_core::collectors::structs::ProcessData;
+use sysinfo::Process;
 
 use crate::{structs::TableRow, utils::bytes_to_mb};
 
@@ -15,6 +16,28 @@ impl TableRow for ProcessData {
             Cell::from(format!("{:.2}%", self.cpu_usage)),
             Cell::from(format!("{} MB", bytes_to_mb(self.memory))),
             Cell::from(self.status.clone()),
+        ]
+    }
+
+    fn column_widths() -> Vec<Constraint> {
+        vec![
+            Constraint::Length(8),  // PID
+            Constraint::Min(20),    // Name (flexible)
+            Constraint::Length(10), // CPU%
+            Constraint::Length(12), // Memory
+            Constraint::Length(10), // Status
+        ]
+    }
+}
+
+impl TableRow for &Process {
+    fn to_cells(&self) -> Vec<Cell<'_>> {
+        vec![
+            Cell::from(self.pid().as_u32().to_string()),
+            Cell::from(self.name().to_string_lossy().to_string()),
+            Cell::from(format!("{:.2}%", self.cpu_usage())),
+            Cell::from(format!("{} MB", bytes_to_mb(self.memory()))),
+            Cell::from(self.status().to_string()),
         ]
     }
 

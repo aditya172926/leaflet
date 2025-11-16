@@ -145,13 +145,16 @@ impl App {
     }
 
     fn display_system_info(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        let system_info_str = format!(
+        let mut system_info_str = format!(
             "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",
             self.system_info.os_name,
             self.system_info.os_version,
             self.system_info.kernel_version,
             self.system_info.hostname
         );
+
+        let helper_instructions = "\n\n\n\n\n\n\nSwitch Tabs: Use number keys OR Tab btn OR <-, -> arrow keys\nMove selector: Up. Down arrow keys\nSelect: Enter key";
+        system_info_str.push_str(helper_instructions);
         let paragraph = paragraph_widget(&system_info_str, "System Info");
         frame.render_widget(
             paragraph.alignment(ratatui::layout::Alignment::Center),

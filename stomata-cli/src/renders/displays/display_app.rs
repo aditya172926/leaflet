@@ -281,7 +281,6 @@ impl App {
         match key.code {
             KeyCode::Char('q') => {
                 self.render = false;
-                ratatui::restore();
             }
             KeyCode::Right | KeyCode::Tab => {
                 self.next_tab();

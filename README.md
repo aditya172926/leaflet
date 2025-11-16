@@ -55,12 +55,14 @@ stomata --interval 1000
 interval is an optional arguement to give. It is the refresh rate of the metrics to be fetched and rendered on the terminal UI.
 
 ## Contributing
-This is a very early stage repository. But feel free to suggest features and make issues before starting to work on a pull request.
 
-### Contributing guidelines
-- Fork the repository before starting to work and making a PR.
-- PRs made should be related and linked to an existing issue.
-- Before making a new issue check if it is not being duplicated.
-- Ask for issues to be assigned to you before starting the work.
-- Work only on the issues assigned to you, to avoid other people working on the same issue.
-- A contributor may be assigned to only one issue at a time, unless it is blocked by other dependent issues related to the main issue that contributor wants to work on.
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
+
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0
+   ([LICENSE-APACHE](LICENSE-APACHE))
+ * MIT license
+   ([LICENSE-MIT](LICENSE-MIT))

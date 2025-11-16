@@ -5,6 +5,13 @@ on:
     types: [closed]
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      test_build_only:
+        description: 'Test build binaries only (skip publish)'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
   release:
@@ -15,6 +22,8 @@ jobs:
     permissions:
       contents: write  # Needed to create tags and releases
       pull-requests: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -68,12 +77,16 @@ jobs:
               - stomata-cli (binary)
             
             ## Installation
+            
+            ### From crates.io (requires Rust)
             ```bash
             cargo install stomata-cli
             ```
+            
+            ### Pre-built binaries (no Rust required)
+            Download the appropriate binary for your platform from the assets below.
           
-          files: |
-            target/release/stomata
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -94,3 +107,105 @@ jobs:
           echo "✅ Release ${{ steps.version.outputs.version }} published successfully!"
           echo "📦 Crates.io: https://crates.io/crates/stomata-cli"
           echo "🎉 GitHub: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"
+
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    needs: release
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: stomata
+            asset_name: stomata-linux-amd64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: stomata
+            asset_name: stomata-linux-amd64-musl
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: stomata.exe
+            asset_name: stomata-windows-amd64.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: stomata
+            asset_name: stomata-macos-amd64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: stomata
+            asset_name: stomata-macos-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux musl only)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }} -p stomata-cli
+
+      - name: Strip binary (Linux and macOS)
+        if: matrix.os != 'windows-latest'
+        run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+      - name: Create archive (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ${{ matrix.asset_name }}.tar.gz ${{ matrix.artifact_name }}
+          mv ${{ matrix.asset_name }}.tar.gz ../../..
+
+      - name: Create archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cd target/${{ matrix.target }}/release
+          Compress-Archive -Path ${{ matrix.artifact_name }} -DestinationPath ../../../${{ matrix.asset_name }}.zip
+
+      - name: Upload to release (Unix)
+        if: matrix.os != 'windows-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          files: ${{ matrix.asset_name }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to release (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          files: ${{ matrix.asset_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

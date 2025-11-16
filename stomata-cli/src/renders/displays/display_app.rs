@@ -1,62 +1,84 @@
-use std::{collections::VecDeque, time::Duration};
+use std::collections::VecDeque;
 
 use ratatui::{
     Frame,
-    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
+    crossterm::event::{KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
     widgets::{Block, Borders, Tabs},
 };
-use stomata_core::collectors::structs::{SystemCollector, SystemInfo, SystemMetrics};
+use stomata_core::collectors::structs::{
+    MetricsCategory, SystemCollector, SystemInfo, SystemMetrics,
+};
 
 use crate::{
     constants::MAX_HISTORY,
     renders::{
-        render_bar::vertical_bar_chart,
-        render_gauge::{self, render_gauge},
-        render_paragraph::paragraph_widget,
-        render_table::render_table,
+        displays::display_single_process::SingleProcessDisplay,
+        render_widgets::{
+            render_gauge::render_gauge, render_paragraph::paragraph_widget,
+            render_table::render_table,
+        },
     },
-    structs::{Cli, Page},
+    structs::{MetricsStorage, Page, SingleProcessUI, UIState},
     utils::bytes_to_mb,
 };
 
 #[derive(Debug)]
 pub struct App {
     pub render: bool,
-    pub metrics_history: VecDeque<SystemMetrics>,
+    pub metrics_history: MetricsStorage,
     pub system_info: SystemInfo,
     pub metrics_collector: SystemCollector,
     pub tab_index: usize,
     pub current_page: Page,
-    pub process_scroll: usize,
+    pub store_data: bool,
+    pub ui_state: UIState,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(store_metrics: bool) -> Self {
         let collector = SystemCollector::new();
         let system_info = collector.system_info();
+        let metrics = match store_metrics {
+            true => MetricsStorage::History(VecDeque::<SystemMetrics>::with_capacity(MAX_HISTORY)),
+            false => MetricsStorage::Single(SystemMetrics::default()),
+        };
         Self {
             render: true,
-            metrics_history: VecDeque::with_capacity(MAX_HISTORY),
+            metrics_history: metrics,
             system_info,
             metrics_collector: collector,
             tab_index: 0,
             current_page: Page::System,
-            process_scroll: 0,
+            store_data: store_metrics, // by default don't store history data
+            ui_state: UIState::default(),
         }
     }
 
-    pub fn update_metrics(&mut self, metrics: SystemMetrics) {
-        if self.metrics_history.len() >= MAX_HISTORY {
-            self.metrics_history.pop_front();
-        }
-        self.metrics_history.push_back(metrics);
+    pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
+        match self.metrics_collector.collect(refresh_category) {
+            Ok(collected_metrics) => match &mut self.metrics_history {
+                MetricsStorage::History(history) => {
+                    if history.len() >= MAX_HISTORY {
+                        history.pop_front();
+                    }
+                    history.push_back(collected_metrics);
+                }
+                MetricsStorage::Single(metric) => *metric = collected_metrics,
+            },
+            Err(e) => {
+                eprintln!("Error collecting metrics: {:?}", e);
+            }
+        };
     }
 
     pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
-        self.metrics_history.back()
+        match &self.metrics_history {
+            MetricsStorage::History(history) => history.back(),
+            MetricsStorage::Single(metric) => Some(metric),
+        }
     }
 
     // go to the next tab
@@ -83,7 +105,7 @@ impl App {
         // render tabs
         self.render_tabs(frame, chunks[0]);
 
-        match self.current_page {
+        match &self.current_page {
             Page::Metrics => {
                 let _ = self.draw_chart(frame, chunks[1]);
             }
@@ -92,6 +114,16 @@ impl App {
             }
             Page::Processes => {
                 let _ = self.display_processes(frame, chunks[1]);
+            }
+            Page::SingleProcess(pd) => {
+                let latest_metrics = self.get_latest_metric().cloned();
+                if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
+                    let _ = SingleProcessUI { data: process }.display_process_metrics(
+                        frame,
+                        chunks[1],
+                        latest_metrics,
+                    );
+                }
             }
         }
     }
@@ -129,14 +161,7 @@ impl App {
     }
 
     fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        match self.metrics_collector.collect() {
-            Ok(collected_metrics) => {
-                self.update_metrics(collected_metrics);
-            }
-            Err(e) => {
-                eprintln!("Error collecting metrics: {:?}", e);
-            }
-        };
+        self.update_metrics(MetricsCategory::Basic);
 
         let latest_metric = match self.get_latest_metric() {
             Some(metric) => metric,
@@ -197,8 +222,10 @@ impl App {
             latest_metric.swap_used, latest_metric.swap_total, swap_used,
         );
 
-        let processes_count_text =
-            format!("Current Processes count {}", latest_metric.processes_count);
+        let processes_count_text = format!(
+            "CPU count: {}\nCurrent Processes count {}",
+            latest_metric.cpu_count, latest_metric.processes_count
+        );
         let process_paragraph = paragraph_widget(&processes_count_text, "Processes Count");
 
         let paragraph = paragraph_widget(&text, "Memory Info");
@@ -218,64 +245,91 @@ impl App {
         Ok(())
     }
 
-    fn display_processes(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        let processes = self.metrics_collector.get_running_processes();
+    // display the current running processes
+    fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+        self.update_metrics(MetricsCategory::ProcessesWithoutTasks); // update processes only
+
+        let processes = match self.get_latest_metric() {
+            Some(metrics) => metrics.processes.clone(),
+            None => Vec::new(),
+        };
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
-        let visible_rows = area.height.saturating_sub(4) as usize;
-        let table_widget = render_table(
-            headers,
-            &processes,
-            "Processes",
-            self.process_scroll,
-            visible_rows,
-        );
-        frame.render_widget(table_widget, area);
+
+        let table_widget = render_table(headers, &processes, "Processes");
+        frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);
         Ok(())
     }
+
     // handle quit events to close the new terminal
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
         if key.kind == KeyEventKind::Press {
-            match key.code {
-                KeyCode::Char('q') => {
-                    self.render = false;
-                    ratatui::restore();
-                }
-                KeyCode::Right | KeyCode::Tab => {
-                    self.next_tab();
-                }
-                KeyCode::Left => {
-                    self.previous_tab();
-                }
-                KeyCode::Char('1') => {
-                    self.tab_index = 0;
-                    self.current_page = Page::System;
-                }
-                KeyCode::Char('2') => {
-                    self.tab_index = 1;
-                    self.current_page = Page::Metrics;
-                }
-                KeyCode::Char('3') => {
-                    self.tab_index = 2;
-                    self.current_page = Page::Processes;
-                }
-                KeyCode::Down => {
-                    if self.current_page == Page::Processes {
-                        let max_processes = match self.get_latest_metric() {
-                            Some(system_metrics) => system_metrics.processes_count,
-                            None => 10 as usize,
-                        };
-                        self.process_scroll =
-                            self.process_scroll.saturating_add(1).min(max_processes);
-                    }
-                }
-                KeyCode::Up => {
-                    if self.current_page == Page::Processes {
-                        self.process_scroll = self.process_scroll.saturating_sub(1);
-                    }
+            self.process_global_events(key);
+            match self.current_page {
+                Page::Processes => {
+                    self.process_page_events(key);
                 }
                 _ => {}
             }
         }
         Ok(())
+    }
+
+    fn process_global_events(&mut self, key: KeyEvent) {
+        match key.code {
+            KeyCode::Char('q') => {
+                self.render = false;
+                ratatui::restore();
+            }
+            KeyCode::Right | KeyCode::Tab => {
+                self.next_tab();
+            }
+            KeyCode::Left => {
+                self.previous_tab();
+            }
+            KeyCode::Char('1') => {
+                self.tab_index = 0;
+                self.current_page = Page::System;
+            }
+            KeyCode::Char('2') => {
+                self.tab_index = 1;
+                self.current_page = Page::Metrics;
+            }
+            KeyCode::Char('3') => {
+                self.tab_index = 2;
+                self.current_page = Page::Processes;
+            }
+            _ => {}
+        }
+    }
+
+    fn process_page_events(&mut self, key: KeyEvent) {
+        match key.code {
+            KeyCode::Down => {
+                let max_processes = match self.get_latest_metric() {
+                    Some(system_metrics) => system_metrics.processes_count,
+                    None => 10 as usize,
+                };
+                if let Some(selected_row) = self.ui_state.process_list.selected() {
+                    let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
+                    self.ui_state.process_list.select(Some(next_row));
+                }
+            }
+            KeyCode::Up => {
+                if let Some(selected_row) = self.ui_state.process_list.selected() {
+                    let next_row = selected_row.saturating_sub(1);
+                    self.ui_state.process_list.select(Some(next_row));
+                }
+            }
+            KeyCode::Enter => {
+                if let Some(selected_process) = self.ui_state.process_list.selected() {
+                    if let Some(selected_process_data) = self.get_latest_metric() {
+                        let process_data = &selected_process_data.processes[selected_process];
+                        // switch to a new page with path process/pid to show process_data
+                        self.current_page = Page::SingleProcess(process_data.clone());
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 }

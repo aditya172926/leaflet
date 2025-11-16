@@ -1,0 +1,112 @@
+use crate::{
+    renders::render_widgets::{
+        render_gauge::render_gauge, render_paragraph::paragraph_widget, render_table::render_table,
+    },
+    structs::SingleProcessUI,
+    utils::bytes_to_mb,
+};
+use chrono::DateTime;
+use ratatui::{
+    Frame,
+    layout::{Constraint, Layout, Rect},
+};
+use stomata_core::collectors::structs::{SystemInfo, SystemMetrics};
+
+pub trait SingleProcessDisplay {
+    fn display_process_metrics(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        system_metrics: Option<SystemMetrics>,
+    ) -> anyhow::Result<()>;
+}
+
+impl SingleProcessDisplay for SingleProcessUI<'_> {
+    fn display_process_metrics(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        system_metrics: Option<SystemMetrics>,
+    ) -> anyhow::Result<()> {
+        let constraints: Vec<Constraint>;
+
+        let tasks = &self.data.tasks;
+        if tasks.len() > 0 {
+            constraints = vec![
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+            ];
+        } else {
+            constraints = vec![Constraint::Percentage(50), Constraint::Percentage(50)];
+        }
+
+        let primary_layout = Layout::horizontal(&constraints).split(area);
+        let secondary_layout =
+            Layout::vertical([Constraint::Percentage(30), Constraint::Percentage(70)])
+                .split(primary_layout[0]);
+
+        let p_info = format!(
+            "PID: {}\nName: {}\nStatus: {}",
+            self.data.basic_process_data.pid,
+            self.data.basic_process_data.name,
+            self.data.basic_process_data.status
+        );
+
+        let basic_info_paragraph = paragraph_widget(&p_info, "Basic Task info");
+        let start_timestamp = DateTime::from_timestamp_secs(self.data.start_time as i64).unwrap();
+        let mut extra_info = format!(
+            "Start time: {:?}\nRunning time: {}\nCWD: {}\nTotal written bytes: {}\nTotal read bytes: {}",
+            start_timestamp,
+            self.data.running_time,
+            self.data
+                .current_working_dir
+                .clone()
+                .unwrap_or(String::new()),
+            self.data.disk_usage.total_written_bytes,
+            self.data.disk_usage.total_read_bytes
+        );
+        if let Some(parent_pid) = self.data.parent_pid {
+            extra_info.push_str(&format!("\nParent PID: {}", parent_pid.as_u32()));
+        };
+        let extra_info_paragraph = paragraph_widget(&extra_info, "More info");
+        let cpu_gauge = render_gauge(
+            self.data.basic_process_data.cpu_usage.into(),
+            100.0,
+            "CPU",
+            "%",
+        );
+
+        frame.render_widget(
+            basic_info_paragraph.alignment(ratatui::layout::Alignment::Left),
+            secondary_layout[0],
+        );
+        frame.render_widget(extra_info_paragraph, primary_layout[1]);
+
+        //---- Conditional Render ----
+        if let Some(sys_metrics) = system_metrics {
+            let tertiary_constraints = [Constraint::Percentage(50), Constraint::Percentage(50)];
+            let total_memory = sys_metrics.memory_total;
+            let process_memory_use = self.data.basic_process_data.memory;
+            let memory_gauge = render_gauge(
+                bytes_to_mb(process_memory_use),
+                bytes_to_mb(total_memory),
+                "Memory",
+                "MB",
+            );
+
+            let tertiary_layout = Layout::vertical(tertiary_constraints).split(secondary_layout[1]);
+            frame.render_widget(cpu_gauge, tertiary_layout[0]);
+            frame.render_widget(memory_gauge, tertiary_layout[1]);
+        } else {
+            frame.render_widget(cpu_gauge, secondary_layout[1]);
+        }
+
+        if tasks.len() > 0 {
+            let task_headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
+            let task_widget = render_table(task_headers, &self.data.tasks, "Tasks");
+            frame.render_widget(task_widget, primary_layout[2]);
+        }
+        Ok(())
+    }
+}

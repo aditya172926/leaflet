@@ -4,6 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Row, Table},
 };
 use stomata_core::collectors::structs::ProcessData;
+use sysinfo::Process;
 
 use crate::{structs::TableRow, utils::bytes_to_mb};
 
@@ -29,13 +30,29 @@ impl TableRow for ProcessData {
     }
 }
 
-pub fn render_table<'a, T>(
-    headers: Vec<&'a str>,
-    items: &'a [T],
-    title: &'a str,
-    scroll_offset: usize,
-    visible_rows: usize,
-) -> Table<'a>
+impl TableRow for &Process {
+    fn to_cells(&self) -> Vec<Cell<'_>> {
+        vec![
+            Cell::from(self.pid().as_u32().to_string()),
+            Cell::from(self.name().to_string_lossy().to_string()),
+            Cell::from(format!("{:.2}%", self.cpu_usage())),
+            Cell::from(format!("{} MB", bytes_to_mb(self.memory()))),
+            Cell::from(self.status().to_string()),
+        ]
+    }
+
+    fn column_widths() -> Vec<Constraint> {
+        vec![
+            Constraint::Length(8),  // PID
+            Constraint::Min(20),    // Name (flexible)
+            Constraint::Length(10), // CPU%
+            Constraint::Length(12), // Memory
+            Constraint::Length(10), // Status
+        ]
+    }
+}
+
+pub fn render_table<'a, T>(headers: Vec<&'a str>, items: &'a [T], title: &'a str) -> Table<'a>
 where
     T: TableRow,
 {
@@ -50,8 +67,6 @@ where
 
     let rows: Vec<Row> = items
         .iter()
-        .skip(scroll_offset)
-        .take(visible_rows)
         .map(|item| {
             let cells = item.to_cells();
             Row::new(cells).height(1)
@@ -59,6 +74,8 @@ where
         .collect();
 
     Table::new(rows, T::column_widths())
+        .row_highlight_style(Style::default().bg(Color::White).fg(Color::Black))
+        .highlight_symbol(">>")
         .header(header)
         .block(Block::default().title(title).borders(Borders::ALL))
         .style(Style::default().fg(Color::White))

@@ -9,6 +9,7 @@ resolver = "3"   # use edition 2024 feature resolver
 [workspace.package]
 version = "0.1.3"
 edition = "2024"
+license = "MIT OR Apache-2.0"
 authors = ["Aditya Singh aditya26sg@gmail.com"]
 repository = "https://github.com/aditya172926/stomata-cli"
 

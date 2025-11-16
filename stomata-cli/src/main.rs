@@ -43,5 +43,6 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    ratatui::restore();
     Ok(())
 }

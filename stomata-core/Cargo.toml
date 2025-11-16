@@ -15,7 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-chrono = "0.4.42"
+chrono = { workspace = true }
 sysinfo = { workspace = true }
 thiserror = "2.0.17"
 tokio = { workspace = true }

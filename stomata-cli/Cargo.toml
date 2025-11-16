@@ -21,3 +21,4 @@ tokio = { workspace = true }
 clap = { version = "4.5.50", features = ["derive"] }
 stomata-core = { version = "0.1.2", path = '../stomata-core' }
 sysinfo = { workspace = true }
+chrono = { workspace = true }

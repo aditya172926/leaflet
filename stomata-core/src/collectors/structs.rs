@@ -52,7 +52,7 @@ impl MetricsCategory {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
     pub cpu_count: usize,

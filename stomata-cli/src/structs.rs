@@ -66,5 +66,5 @@ impl Default for UIState {
 }
 
 pub struct SingleProcessUI<'a> {
-    pub data: SingleProcessData<'a>,
+    pub data: SingleProcessData<'a>
 }

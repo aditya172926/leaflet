@@ -118,7 +118,9 @@ impl App {
             Page::SingleProcess(pd) => {
                 let latest_metrics = self.get_latest_metric().cloned();
                 if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
-                    let _ = SingleProcessUI { data: process }.display_process_metrics(
+                    let _ = SingleProcessUI { 
+                        data: process
+                    }.display_process_metrics(
                         frame,
                         chunks[1],
                         latest_metrics,

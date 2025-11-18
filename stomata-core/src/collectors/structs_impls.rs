@@ -1,9 +1,15 @@
-use std::collections::VecDeque;
 use anyhow::Result;
 use chrono::Utc;
+use std::collections::VecDeque;
 use sysinfo::{DiskUsage, Pid, Process, ProcessRefreshKind, System};
 
-use crate::collectors::structs::{MetricsCategory, ProcessData, SingleProcessData, SystemCollector, SystemInfo, SystemMetrics};
+use crate::{
+    collectors::structs::{
+        MetricsCategory, MetricsHistory, ProcessData, SingleProcessData, SystemCollector,
+        SystemInfo, SystemMetrics,
+    },
+    constants::MAX_HISTORY,
+};
 
 impl MetricsCategory {
     pub fn refresh_metrics(&self, system: &mut System) {
@@ -77,7 +83,6 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
         let start_time = process.start_time();
         let running_time = process.run_time();
         let parent_pid = process.parent();
-        
 
         SingleProcessData {
             basic_process_data: ProcessData::from(process),
@@ -109,16 +114,22 @@ impl<'a> SingleProcessData<'a> {
 
 impl Default for SystemCollector {
     fn default() -> Self {
-        Self::new()
+        Self::new(false)
     }
 }
 
 impl SystemCollector {
-    pub fn new() -> Self {
+    pub fn new(store_history: bool) -> Self {
         let mut system = System::new_all();
         system.refresh_all();
-
-        Self { system }
+        let system_metrics = match store_history {
+            true => MetricsHistory::History(VecDeque::<SystemMetrics>::with_capacity(MAX_HISTORY)),
+            false => MetricsHistory::Single(SystemMetrics::default()),
+        };
+        Self {
+            system,
+            system_metrics,
+        }
     }
 
     pub fn collect(&mut self, refresh_kind: MetricsCategory) -> Result<SystemMetrics> {
@@ -142,7 +153,7 @@ impl SystemCollector {
         let swap_total = self.system.total_swap();
         let processes_count = self.system.processes().len();
 
-        Ok(SystemMetrics {
+        let system_metric = SystemMetrics {
             timestamp: Utc::now(),
             cpu_count,
             cpu_usage,
@@ -152,7 +163,19 @@ impl SystemCollector {
             swap_total,
             processes_count,
             processes,
-        })
+        };
+
+        match &mut self.system_metrics {
+            MetricsHistory::Single(sys) => *sys = system_metric.clone(),
+            MetricsHistory::History(sys_vec) => {
+                if sys_vec.len() > MAX_HISTORY {
+                    sys_vec.pop_front();
+                }
+                sys_vec.push_back(system_metric.clone());
+            }
+        }
+
+        Ok(system_metric)
     }
 
     pub fn system_info(&self) -> SystemInfo {

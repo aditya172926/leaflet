@@ -47,12 +47,6 @@ pub trait TableRow {
 }
 
 #[derive(Debug)]
-pub enum MetricsStorage {
-    Single(SystemMetrics),
-    History(VecDeque<SystemMetrics>),
-}
-
-#[derive(Debug)]
 pub struct UIState {
     pub process_list: TableState,
 }
@@ -66,5 +60,5 @@ impl Default for UIState {
 }
 
 pub struct SingleProcessUI<'a> {
-    pub data: SingleProcessData<'a>
+    pub data: SingleProcessData<'a>,
 }

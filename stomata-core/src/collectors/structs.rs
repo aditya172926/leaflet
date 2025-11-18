@@ -59,4 +59,11 @@ pub struct SingleProcessData<'a> {
 #[derive(Debug)]
 pub struct SystemCollector {
     pub system: System,
+    pub system_metrics: MetricsHistory,
+}
+
+#[derive(Debug)]
+pub enum MetricsHistory {
+    Single(SystemMetrics),
+    History(VecDeque<SystemMetrics>),
 }

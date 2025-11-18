@@ -48,8 +48,6 @@ pub struct SingleProcessData<'a> {
     pub basic_process_data: ProcessData,
     pub tasks: Vec<&'a Process>,
     pub disk_usage: DiskUsage,
-    pub disk_read_usage: VecDeque<u64>, // record of bytes read since last refresh
-    pub disk_write_usage: VecDeque<u64>, // record of bytes written since last refresh
     pub start_time: u64,
     pub running_time: u64,
     pub current_working_dir: Option<String>,

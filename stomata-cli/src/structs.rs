@@ -6,6 +6,9 @@ use ratatui::{
     widgets::{Cell, TableState},
 };
 use stomata_core::collectors::structs::{ProcessData, SingleProcessData, SystemMetrics};
+use sysinfo::DiskUsage;
+
+use crate::constants::MAX_HISTORY;
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -49,16 +52,47 @@ pub trait TableRow {
 #[derive(Debug)]
 pub struct UIState {
     pub process_list: TableState,
+    pub single_process_disk_usage: SingleProcessDiskUsage,
 }
 
 impl Default for UIState {
     fn default() -> Self {
         Self {
             process_list: TableState::default().with_selected(0),
+            single_process_disk_usage: SingleProcessDiskUsage::default(),
         }
     }
 }
 
 pub struct SingleProcessUI<'a> {
     pub data: SingleProcessData<'a>,
+}
+
+#[derive(Debug)]
+pub struct SingleProcessDiskUsage {
+    disk_read_usage: VecDeque<u64>,
+    disk_write_usage: VecDeque<u64>,
+}
+
+impl Default for SingleProcessDiskUsage {
+    fn default() -> Self {
+        Self {
+            disk_read_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
+            disk_write_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
+        }
+    }
+}
+
+impl SingleProcessDiskUsage {
+    pub fn update_disk_history(&mut self, disk_usage: &DiskUsage) {
+        if self.disk_read_usage.len() > 60 {
+            self.disk_read_usage.pop_front();
+        }
+        self.disk_read_usage.push_back(disk_usage.read_bytes);
+
+        if self.disk_write_usage.len() > 60 {
+            self.disk_write_usage.pop_front();
+        }
+        self.disk_write_usage.push_back(disk_usage.written_bytes);
+    }
 }

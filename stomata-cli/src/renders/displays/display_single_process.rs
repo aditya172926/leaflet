@@ -2,7 +2,7 @@ use crate::{
     renders::render_widgets::{
         render_gauge::render_gauge, render_paragraph::paragraph_widget, render_table::render_table,
     },
-    structs::SingleProcessUI,
+    structs::{SingleProcessUI, UIState},
     utils::bytes_to_mb,
 };
 use chrono::DateTime;
@@ -18,6 +18,7 @@ pub trait SingleProcessDisplay {
         frame: &mut Frame,
         area: Rect,
         system_metrics: Option<SystemMetrics>,
+        ui_state: &UIState,
     ) -> anyhow::Result<()>;
 }
 
@@ -27,6 +28,7 @@ impl SingleProcessDisplay for SingleProcessUI<'_> {
         frame: &mut Frame,
         area: Rect,
         system_metrics: Option<SystemMetrics>,
+        ui_state: &UIState,
     ) -> anyhow::Result<()> {
         let constraints: Vec<Constraint>;
 

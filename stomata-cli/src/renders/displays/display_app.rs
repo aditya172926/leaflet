@@ -112,10 +112,14 @@ impl App {
             Page::SingleProcess(pd) => {
                 let latest_metrics = self.get_latest_metric().cloned();
                 if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
+                    self.ui_state
+                        .single_process_disk_usage
+                        .update_disk_history(&process.disk_usage);
                     let _ = SingleProcessUI { data: process }.display_process_metrics(
                         frame,
                         chunks[1],
                         latest_metrics,
+                        &self.ui_state,
                     );
                 }
             }

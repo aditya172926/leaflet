@@ -88,27 +88,11 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
             basic_process_data: ProcessData::from(process),
             tasks: tasks,
             disk_usage,
-            disk_read_usage: VecDeque::new(),
-            disk_write_usage: VecDeque::new(),
             start_time,
             running_time,
             current_working_dir,
             parent_pid,
         }
-    }
-}
-
-impl<'a> SingleProcessData<'a> {
-    pub fn update_disk_history(&mut self, disk_usage: &DiskUsage) {
-        if self.disk_read_usage.len() > 60 {
-            self.disk_read_usage.pop_front();
-        }
-        self.disk_read_usage.push_back(disk_usage.read_bytes);
-
-        if self.disk_write_usage.len() > 60 {
-            self.disk_write_usage.pop_front();
-        }
-        self.disk_write_usage.push_back(disk_usage.written_bytes);
     }
 }
 
@@ -201,7 +185,6 @@ impl SystemCollector {
         MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
         if let Some(process) = self.system.process(Pid::from_u32(pid)) {
             let mut single_process_data = SingleProcessData::from((process, &self.system));
-            single_process_data.update_disk_history(&process.disk_usage());
             Some(single_process_data)
         } else {
             None

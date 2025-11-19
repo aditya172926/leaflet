@@ -5,7 +5,10 @@ use ratatui::{
     layout::Constraint,
     widgets::{Cell, TableState},
 };
-use stomata_core::collectors::structs::{ProcessData, SingleProcessData, SystemMetrics};
+use stomata_core::collectors::structs::{ProcessData, SingleProcessData};
+use sysinfo::DiskUsage;
+
+use crate::constants::MAX_HISTORY;
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -47,24 +50,58 @@ pub trait TableRow {
 }
 
 #[derive(Debug)]
-pub enum MetricsStorage {
-    Single(SystemMetrics),
-    History(VecDeque<SystemMetrics>),
-}
-
-#[derive(Debug)]
 pub struct UIState {
     pub process_list: TableState,
+    pub single_process_disk_usage: SingleProcessDiskUsage,
 }
 
 impl Default for UIState {
     fn default() -> Self {
         Self {
             process_list: TableState::default().with_selected(0),
+            single_process_disk_usage: SingleProcessDiskUsage::default(),
         }
     }
 }
 
 pub struct SingleProcessUI<'a> {
     pub data: SingleProcessData<'a>,
+}
+
+#[derive(Debug)]
+pub struct SingleProcessDiskUsage {
+    pub pid: u32,
+    pub disk_read_usage: VecDeque<u64>,
+    pub disk_write_usage: VecDeque<u64>,
+}
+
+impl Default for SingleProcessDiskUsage {
+    fn default() -> Self {
+        Self {
+            pid: 0,
+            disk_read_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
+            disk_write_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
+        }
+    }
+}
+
+impl SingleProcessDiskUsage {
+    pub fn update_disk_history(&mut self, pid: u32, disk_usage: &DiskUsage) {
+        // reset the UI state data for disk write/read when changed at current displaying pid
+        if pid != self.pid {
+            self.disk_read_usage.clear();
+            self.disk_write_usage.clear();
+            self.pid = pid;
+        }
+
+        if self.disk_read_usage.len() > 60 {
+            self.disk_read_usage.pop_front();
+        }
+        self.disk_read_usage.push_back(disk_usage.read_bytes);
+
+        if self.disk_write_usage.len() > 60 {
+            self.disk_write_usage.pop_front();
+        }
+        self.disk_write_usage.push_back(disk_usage.written_bytes);
+    }
 }

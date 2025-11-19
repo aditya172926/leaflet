@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent, KeyEventKind},
@@ -9,11 +7,10 @@ use ratatui::{
     widgets::{Block, Borders, Tabs},
 };
 use stomata_core::collectors::structs::{
-    MetricsCategory, SystemCollector, SystemInfo, SystemMetrics,
+    MetricsCategory, MetricsHistory, SystemCollector, SystemInfo, SystemMetrics,
 };
 
 use crate::{
-    constants::MAX_HISTORY,
     renders::{
         displays::display_single_process::SingleProcessDisplay,
         render_widgets::{
@@ -21,14 +18,14 @@ use crate::{
             render_table::render_table,
         },
     },
-    structs::{MetricsStorage, Page, SingleProcessUI, UIState},
+    structs::{Page, SingleProcessUI, UIState},
     utils::bytes_to_mb,
 };
 
 #[derive(Debug)]
 pub struct App {
     pub render: bool,
-    pub metrics_history: MetricsStorage,
+    // pub metrics_history: MetricsStorage,
     pub system_info: SystemInfo,
     pub metrics_collector: SystemCollector,
     pub tab_index: usize,
@@ -39,15 +36,10 @@ pub struct App {
 
 impl App {
     pub fn new(store_metrics: bool) -> Self {
-        let collector = SystemCollector::new();
+        let collector = SystemCollector::new(store_metrics);
         let system_info = collector.system_info();
-        let metrics = match store_metrics {
-            true => MetricsStorage::History(VecDeque::<SystemMetrics>::with_capacity(MAX_HISTORY)),
-            false => MetricsStorage::Single(SystemMetrics::default()),
-        };
         Self {
             render: true,
-            metrics_history: metrics,
             system_info,
             metrics_collector: collector,
             tab_index: 0,
@@ -58,26 +50,15 @@ impl App {
     }
 
     pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
-        match self.metrics_collector.collect(refresh_category) {
-            Ok(collected_metrics) => match &mut self.metrics_history {
-                MetricsStorage::History(history) => {
-                    if history.len() >= MAX_HISTORY {
-                        history.pop_front();
-                    }
-                    history.push_back(collected_metrics);
-                }
-                MetricsStorage::Single(metric) => *metric = collected_metrics,
-            },
-            Err(e) => {
-                eprintln!("Error collecting metrics: {:?}", e);
-            }
+        if let Err(e) = self.metrics_collector.collect(refresh_category) {
+            eprintln!("Error collecting metrics: {:?}", e);
         };
     }
 
     pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
-        match &self.metrics_history {
-            MetricsStorage::History(history) => history.back(),
-            MetricsStorage::Single(metric) => Some(metric),
+        match &self.metrics_collector.system_metrics {
+            MetricsHistory::History(history) => history.back(),
+            MetricsHistory::Single(metric) => Some(metric),
         }
     }
 
@@ -118,10 +99,14 @@ impl App {
             Page::SingleProcess(pd) => {
                 let latest_metrics = self.get_latest_metric().cloned();
                 if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
+                    self.ui_state
+                        .single_process_disk_usage
+                        .update_disk_history(process.basic_process_data.pid, &process.disk_usage);
                     let _ = SingleProcessUI { data: process }.display_process_metrics(
                         frame,
                         chunks[1],
                         latest_metrics,
+                        &mut self.ui_state,
                     );
                 }
             }

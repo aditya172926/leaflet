@@ -1,8 +1,6 @@
-use std::collections::VecDeque;
-
-use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sysinfo::{DiskUsage, Pid, Process, ProcessRefreshKind, System};
+use std::collections::VecDeque;
+use sysinfo::{DiskUsage, Pid, Process, System};
 
 pub enum MetricsCategory {
     ProcessesWithoutTasks, // refreshes processes but not tasks

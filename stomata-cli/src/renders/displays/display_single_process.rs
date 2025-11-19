@@ -11,7 +11,7 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
 };
-use stomata_core::collectors::structs::{SystemInfo, SystemMetrics};
+use stomata_core::collectors::structs::SystemMetrics;
 
 pub trait SingleProcessDisplay {
     fn display_process_metrics(

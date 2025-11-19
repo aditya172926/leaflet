@@ -5,7 +5,7 @@ use ratatui::{
     layout::Constraint,
     widgets::{Cell, TableState},
 };
-use stomata_core::collectors::structs::{ProcessData, SingleProcessData, SystemMetrics};
+use stomata_core::collectors::structs::{ProcessData, SingleProcessData};
 use sysinfo::DiskUsage;
 
 use crate::constants::MAX_HISTORY;
@@ -97,23 +97,11 @@ impl SingleProcessDiskUsage {
         if self.disk_read_usage.len() > 60 {
             self.disk_read_usage.pop_front();
         }
-        let random_num = random_u64();
-        self.disk_read_usage.push_back(random_num);
+        self.disk_read_usage.push_back(disk_usage.read_bytes);
 
         if self.disk_write_usage.len() > 60 {
             self.disk_write_usage.pop_front();
         }
-        let random_num = random_u64();
-        self.disk_write_usage.push_back(random_num);
+        self.disk_write_usage.push_back(disk_usage.written_bytes);
     }
-}
-
-use std::collections::hash_map::RandomState;
-use std::hash::{BuildHasher, Hasher};
-
-fn random_u64() -> u64 {
-    let random_state = RandomState::new();
-    let mut hasher = random_state.build_hasher();
-    let num = hasher.finish();
-    (num % 100) + 1
 }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::Utc;
 use std::collections::VecDeque;
-use sysinfo::{DiskUsage, Pid, Process, ProcessRefreshKind, System};
+use sysinfo::{Pid, Process, ProcessRefreshKind, System};
 
 use crate::{
     collectors::structs::{
@@ -184,7 +184,7 @@ impl SystemCollector {
     pub fn get_process_for_pid(&mut self, pid: u32) -> Option<SingleProcessData<'_>> {
         MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
         if let Some(process) = self.system.process(Pid::from_u32(pid)) {
-            let mut single_process_data = SingleProcessData::from((process, &self.system));
+            let single_process_data = SingleProcessData::from((process, &self.system));
             Some(single_process_data)
         } else {
             None

@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent, KeyEventKind},
@@ -13,7 +11,6 @@ use stomata_core::collectors::structs::{
 };
 
 use crate::{
-    constants::MAX_HISTORY,
     renders::{
         displays::display_single_process::SingleProcessDisplay,
         render_widgets::{
@@ -53,13 +50,8 @@ impl App {
     }
 
     pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
-        match self.metrics_collector.collect(refresh_category) {
-            Ok(collected_metrics) => {
-                // don't need anything here
-            }
-            Err(e) => {
-                eprintln!("Error collecting metrics: {:?}", e);
-            }
+        if let Err(e) = self.metrics_collector.collect(refresh_category) {
+            eprintln!("Error collecting metrics: {:?}", e);
         };
     }
 

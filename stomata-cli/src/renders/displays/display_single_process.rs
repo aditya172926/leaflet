@@ -1,6 +1,7 @@
 use crate::{
     renders::render_widgets::{
-        render_gauge::render_gauge, render_paragraph::paragraph_widget, render_table::render_table,
+        render_gauge::render_gauge, render_paragraph::paragraph_widget,
+        render_sparkline::render_sparkline, render_table::render_table,
     },
     structs::{SingleProcessUI, UIState},
     utils::bytes_to_mb,
@@ -18,7 +19,7 @@ pub trait SingleProcessDisplay {
         frame: &mut Frame,
         area: Rect,
         system_metrics: Option<SystemMetrics>,
-        ui_state: &UIState,
+        ui_state: &mut UIState,
     ) -> anyhow::Result<()>;
 }
 
@@ -28,7 +29,7 @@ impl SingleProcessDisplay for SingleProcessUI<'_> {
         frame: &mut Frame,
         area: Rect,
         system_metrics: Option<SystemMetrics>,
-        ui_state: &UIState,
+        ui_state: &mut UIState,
     ) -> anyhow::Result<()> {
         let constraints: Vec<Constraint>;
 
@@ -58,7 +59,7 @@ impl SingleProcessDisplay for SingleProcessUI<'_> {
         let basic_info_paragraph = paragraph_widget(&p_info, "Basic Task info");
         let start_timestamp = DateTime::from_timestamp_secs(self.data.start_time as i64).unwrap();
         let mut extra_info = format!(
-            "Start time: {:?}\nRunning time: {}\nCWD: {}\nTotal written bytes: {}\nTotal read bytes: {}",
+            "Start time: {:?}\nRunning time: {}\nCWD: {}\nTotal written bytes: {}\nTotal read bytes: {}\nLatest Read bytes: {}\nLatest write bytes: {}",
             start_timestamp,
             self.data.running_time,
             self.data
@@ -66,7 +67,9 @@ impl SingleProcessDisplay for SingleProcessUI<'_> {
                 .clone()
                 .unwrap_or(String::new()),
             self.data.disk_usage.total_written_bytes,
-            self.data.disk_usage.total_read_bytes
+            self.data.disk_usage.total_read_bytes,
+            self.data.disk_usage.read_bytes,
+            self.data.disk_usage.written_bytes
         );
         if let Some(parent_pid) = self.data.parent_pid {
             extra_info.push_str(&format!("\nParent PID: {}", parent_pid.as_u32()));
@@ -83,7 +86,29 @@ impl SingleProcessDisplay for SingleProcessUI<'_> {
             basic_info_paragraph.alignment(ratatui::layout::Alignment::Left),
             secondary_layout[0],
         );
-        frame.render_widget(extra_info_paragraph, primary_layout[1]);
+
+        // ---- Primary 1 layout -----
+        let primary_1_layout = Layout::vertical([
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(primary_layout[1]);
+
+        let disk_read_data = ui_state
+            .single_process_disk_usage
+            .disk_read_usage
+            .make_contiguous();
+        let disk_write_data = ui_state
+            .single_process_disk_usage
+            .disk_write_usage
+            .make_contiguous();
+        let disk_read_sparkline = render_sparkline(disk_read_data, "Disk Read Bytes");
+        let disk_write_sparkline = render_sparkline(disk_write_data, "Disk Write Bytes");
+
+        frame.render_widget(extra_info_paragraph, primary_1_layout[0]);
+        frame.render_widget(disk_read_sparkline, primary_1_layout[1]);
+        frame.render_widget(disk_write_sparkline, primary_1_layout[2]);
 
         //---- Conditional Render ----
         if let Some(sys_metrics) = system_metrics {

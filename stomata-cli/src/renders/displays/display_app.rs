@@ -119,7 +119,7 @@ impl App {
                         frame,
                         chunks[1],
                         latest_metrics,
-                        &self.ui_state,
+                        &mut self.ui_state,
                     );
                 }
             }

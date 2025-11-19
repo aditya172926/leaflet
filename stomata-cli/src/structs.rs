@@ -70,8 +70,8 @@ pub struct SingleProcessUI<'a> {
 
 #[derive(Debug)]
 pub struct SingleProcessDiskUsage {
-    disk_read_usage: VecDeque<u64>,
-    disk_write_usage: VecDeque<u64>,
+    pub disk_read_usage: VecDeque<u64>,
+    pub disk_write_usage: VecDeque<u64>,
 }
 
 impl Default for SingleProcessDiskUsage {

@@ -70,6 +70,7 @@ pub struct SingleProcessUI<'a> {
 
 #[derive(Debug)]
 pub struct SingleProcessDiskUsage {
+    pub pid: u32,
     pub disk_read_usage: VecDeque<u64>,
     pub disk_write_usage: VecDeque<u64>,
 }
@@ -77,6 +78,7 @@ pub struct SingleProcessDiskUsage {
 impl Default for SingleProcessDiskUsage {
     fn default() -> Self {
         Self {
+            pid: 0,
             disk_read_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
             disk_write_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
         }
@@ -84,15 +86,34 @@ impl Default for SingleProcessDiskUsage {
 }
 
 impl SingleProcessDiskUsage {
-    pub fn update_disk_history(&mut self, disk_usage: &DiskUsage) {
+    pub fn update_disk_history(&mut self, pid: u32, disk_usage: &DiskUsage) {
+        // reset the UI state data for disk write/read when changed at current displaying pid
+        if pid != self.pid {
+            self.disk_read_usage.clear();
+            self.disk_write_usage.clear();
+            self.pid = pid;
+        }
+
         if self.disk_read_usage.len() > 60 {
             self.disk_read_usage.pop_front();
         }
-        self.disk_read_usage.push_back(disk_usage.read_bytes);
+        let random_num = random_u64();
+        self.disk_read_usage.push_back(random_num);
 
         if self.disk_write_usage.len() > 60 {
             self.disk_write_usage.pop_front();
         }
-        self.disk_write_usage.push_back(disk_usage.written_bytes);
+        let random_num = random_u64();
+        self.disk_write_usage.push_back(random_num);
     }
+}
+
+use std::collections::hash_map::RandomState;
+use std::hash::{BuildHasher, Hasher};
+
+fn random_u64() -> u64 {
+    let random_state = RandomState::new();
+    let mut hasher = random_state.build_hasher();
+    let num = hasher.finish();
+    (num % 100) + 1
 }

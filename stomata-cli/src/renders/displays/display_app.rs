@@ -41,13 +41,8 @@ impl App {
     pub fn new(store_metrics: bool) -> Self {
         let collector = SystemCollector::new(store_metrics);
         let system_info = collector.system_info();
-        // let metrics = match store_metrics {
-        //     true => MetricsStorage::History(VecDeque::<SystemMetrics>::with_capacity(MAX_HISTORY)),
-        //     false => MetricsStorage::Single(SystemMetrics::default()),
-        // };
         Self {
             render: true,
-            // metrics_history: metrics,
             system_info,
             metrics_collector: collector,
             tab_index: 0,
@@ -114,7 +109,7 @@ impl App {
                 if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
                     self.ui_state
                         .single_process_disk_usage
-                        .update_disk_history(&process.disk_usage);
+                        .update_disk_history(process.basic_process_data.pid, &process.disk_usage);
                     let _ = SingleProcessUI { data: process }.display_process_metrics(
                         frame,
                         chunks[1],

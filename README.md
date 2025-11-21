@@ -7,18 +7,16 @@
 
 </div>
 
-<div align="center">
-<img src="https://github.com/user-attachments/assets/411bd137-186e-4276-bac1-e586c87c7761" alt="Quick Demo showing stomata cli" />
-</div>
-
 > **Note**: Stomata is currently under development and more features and fixes are upcoming.
 Right now Stomata is very minimalistic and will introduce new features as the development goes on.
+
+https://github.com/user-attachments/assets/0dbe7dcc-a76e-4dd1-ae8f-233ebdf8e4e0
 
 ---
 
 ## Features
 
-- Real-time **memory and swap usage gauges**  
+- Real-time **memory swap, CPU, Disk usage gauges**  
 - Minimal dependencies; built with **Rust**
 - Designed as a **workspace**: includes a reusable library (`Stomata-core`) and a CLI (`Stomata-cli`)  
 

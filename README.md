@@ -2,55 +2,106 @@
   <h1>Stomata</h1>
 
   <p>
-    A CLI tool for **collecting and visualizing system metrics** in real-time. It provides a lightweight, terminal-based dashboard to monitor memory, swap, CPU, and other resources with a clean interface.
+    <strong>A lightweight real-time terminal system monitor built with Rust</strong>
   </p>
+  <p>Track machine resource utilization, processes and performance in real-time as you run from your terminal</p>
 
+  <a href="https://crates.io/crates/stomata-cli">
+    <img src="https://img.shields.io/crates/v/stomata-cli.svg" alt="Crates.io">
+  </a>
+  <a href="https://github.com/aditya172926/stomata-cli/stargazers">
+    <img src="https://img.shields.io/github/stars/aditya172926/stomata-cli" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/aditya172926/stomata-cli/blob/master/LICENSE-MIT">
+    <img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue" alt="License">
+  </a>
 </div>
 
-> **Note**: Stomata is currently under development and more features and fixes are upcoming.
-Right now Stomata is very minimalistic and will introduce new features as the development goes on.
+---
+## Demo
 
 https://github.com/user-attachments/assets/0dbe7dcc-a76e-4dd1-ae8f-233ebdf8e4e0
 
+*Stomata tracking memory, swap, CPU, and per-process resource usage in real-time*
+
 ---
+
+## Why Stomata?
+
+I repeateadly faced out-of-memory issues while working with very large Rust projects. Other tools showed me the metrics, but not the culprit and in a very clustered UI.
+
+Stomata gives:
+- **System-wide metrics**: Memory, Swap, CPU, Disk usage in one place. You can immediately know when the load kicks in
+- **Process level details**: See exactly which process is using how much of machine resources
+- **Single Process inspection**: Drill into a single process to check its CPU utilizations, memory use, disk read/write bytes in real-time
+- **Lightweight**: Minimal footprints
 
 ## Features
 
-- Real-time **memory swap, CPU, Disk usage gauges**  
-- Minimal dependencies; built with **Rust**
+### System Monitoring
+- Real-time memory, swap, CPU, disk usage gauges
+- CPU utilization tracking
+- OS and system information
+
+### Process Monitoring
+- Live process list with resource consumption
+- Per-process CPU and memory usage
+- Per process meta info about running time, start time, working directory and more
+
+### Process Inspection
+- Select any process for detailed view
+- Current working directory (CWD)
+- Disk read/write bytes with sparkline graphs
+- Memory and CPU usage over time
+
 - Designed as a **workspace**: includes a reusable library (`Stomata-core`) and a CLI (`Stomata-cli`)  
 
 ---
 
 ## Installation
 
-Install via **crates.io**:
-
+**Via crates.io:**
 ```bash
 cargo install stomata-cli
 ```
 
-You can also add the stomata-core crate in your rust project as it is deployed as a separate crate
-
+**Using the core library in your project:**
 ```bash
 cargo add stomata-core
 ```
 
-## Building Locally with Cargo
-Make sure you have Rust installed on your machine. Stomata is being built using rustc version 1.90.0
+## Usage
 
-Clone the master branch of the repository
 ```bash
-git clone https://github.com/aditya172926/stomata-cli.git
-```
+# Run with default settings
+stomata
 
-Once cloned you can either run `cargo build` or `make build` to execute debug build command from the make file. If you want to build the release execute `make release`
-
-To run the cli, use the command
-```bash
+# Custom refresh interval (milliseconds)
 stomata --interval 1000
 ```
-interval is an optional arguement to give. It is the refresh rate of the metrics to be fetched and rendered on the terminal UI.
+
+## Building from Source
+
+Requires Rust 1.90.0+
+
+```bash
+git clone https://github.com/aditya172926/stomata-cli.git
+cd stomata-cli
+
+# Debug build
+cargo build
+# or
+make build
+
+# Release build
+make release
+```
+
+## Project Structure
+
+Stomata is organized as a Cargo workspace:
+- `stomata-cli` — The terminal application
+- `stomata-core` — Reusable library for metrics collection
 
 ## Contributing
 

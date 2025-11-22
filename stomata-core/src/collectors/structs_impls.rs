@@ -4,10 +4,10 @@ use std::collections::VecDeque;
 use sysinfo::{Pid, Process, ProcessRefreshKind, System};
 
 use crate::{
-    collectors::structs::{
-        MetricsCategory, MetricsHistory, ProcessData, SingleProcessData, SystemCollector,
-        SystemInfo, SystemMetrics,
-    },
+    collectors::{structs::{
+        MetricsCategory, MetricsHistory, ProcessData, SingleProcessData,
+        SystemInfo,
+    }, system::collectors::SystemCollector},
     constants::MAX_HISTORY,
 };
 
@@ -96,72 +96,7 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
     }
 }
 
-impl Default for SystemCollector {
-    fn default() -> Self {
-        Self::new(false)
-    }
-}
-
 impl SystemCollector {
-    pub fn new(store_history: bool) -> Self {
-        let mut system = System::new_all();
-        system.refresh_all();
-        let system_metrics = match store_history {
-            true => MetricsHistory::History(VecDeque::<SystemMetrics>::with_capacity(MAX_HISTORY)),
-            false => MetricsHistory::Single(SystemMetrics::default()),
-        };
-        Self {
-            system,
-            system_metrics,
-        }
-    }
-
-    pub fn collect(&mut self, refresh_kind: MetricsCategory) -> Result<SystemMetrics> {
-        let mut processes: Vec<ProcessData> = Vec::new();
-        refresh_kind.refresh_metrics(&mut self.system);
-
-        match refresh_kind {
-            MetricsCategory::ProcessesWithoutTasks => {
-                processes = self.get_running_processes();
-            }
-            MetricsCategory::Processes => {
-                processes = self.get_running_processes();
-            }
-            _ => {}
-        };
-        let cpu_count = self.system.cpus().len();
-        let cpu_usage = self.system.global_cpu_usage();
-        let memory_used = self.system.used_memory();
-        let memory_total = self.system.total_memory();
-        let swap_used = self.system.used_swap();
-        let swap_total = self.system.total_swap();
-        let processes_count = self.system.processes().len();
-
-        let system_metric = SystemMetrics {
-            timestamp: Utc::now(),
-            cpu_count,
-            cpu_usage,
-            memory_used,
-            memory_total,
-            swap_used,
-            swap_total,
-            processes_count,
-            processes,
-        };
-
-        match &mut self.system_metrics {
-            MetricsHistory::Single(sys) => *sys = system_metric.clone(),
-            MetricsHistory::History(sys_vec) => {
-                if sys_vec.len() > MAX_HISTORY {
-                    sys_vec.pop_front();
-                }
-                sys_vec.push_back(system_metric.clone());
-            }
-        }
-
-        Ok(system_metric)
-    }
-
     pub fn system_info(&self) -> SystemInfo {
         SystemInfo {
             os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),

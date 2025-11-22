@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use std::collections::VecDeque;
 use sysinfo::{DiskUsage, Pid, Process, System};
 
+use crate::collectors::system::metrics::SystemMetrics;
+
 pub enum MetricsCategory {
     ProcessesWithoutTasks, // refreshes processes but not tasks
     Processes,             // refreshes all processes with tasks
@@ -10,19 +12,6 @@ pub enum MetricsCategory {
     CPU,
     AllResources, // refreshes everything
     Basic,        // refreshes CPU + Memory usage
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct SystemMetrics {
-    pub timestamp: DateTime<Utc>,
-    pub cpu_count: usize,
-    pub cpu_usage: f32,
-    pub memory_used: u64,
-    pub memory_total: u64,
-    pub swap_used: u64,
-    pub swap_total: u64,
-    pub processes_count: usize,
-    pub processes: Vec<ProcessData>,
 }
 
 #[derive(Debug, Clone)]

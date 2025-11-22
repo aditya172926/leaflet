@@ -6,14 +6,16 @@ use ratatui::{
     text::Line,
     widgets::{Block, Borders, Tabs},
 };
-use stomata_core::collectors::structs::{
-    MetricsCategory, MetricsHistory, SystemCollector, SystemInfo, SystemMetrics,
+use stomata_core::collectors::{
+    structs::{Metrics, MetricsCategory, MetricsHistory, MetricsToFetch, StomataSystemMetrics},
+    system::metrics::SystemMetrics,
 };
 
 use crate::{
     renders::{
         displays::{
             display_network::display_network_stats, display_single_process::SingleProcessDisplay,
+            traits::Display,
         },
         render_widgets::{
             render_gauge::render_gauge, render_paragraph::paragraph_widget,
@@ -27,9 +29,9 @@ use crate::{
 #[derive(Debug)]
 pub struct App {
     pub render: bool,
-    // pub metrics_history: MetricsStorage,
-    pub system_info: SystemInfo,
-    pub metrics_collector: SystemCollector,
+    // pub system_info: SystemInfo,
+    pub metrics: StomataSystemMetrics,
+    // pub metrics_collector: SystemCollector,
     pub tab_index: usize,
     pub current_page: Page,
     pub store_data: bool,
@@ -38,12 +40,11 @@ pub struct App {
 
 impl App {
     pub fn new(store_metrics: bool) -> Self {
-        let collector = SystemCollector::new(store_metrics);
-        let system_info = collector.system_info();
+        // let collector = SystemCollector::new(store_metrics);
+        // let system_info = collector.system_info();
         Self {
             render: true,
-            system_info,
-            metrics_collector: collector,
+            metrics: StomataSystemMetrics::new(),
             tab_index: 0,
             current_page: Page::System,
             store_data: store_metrics, // by default don't store history data
@@ -51,18 +52,18 @@ impl App {
         }
     }
 
-    pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
-        if let Err(e) = self.metrics_collector.collect(refresh_category) {
-            eprintln!("Error collecting metrics: {:?}", e);
-        };
-    }
+    // pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
+    //     if let Err(e) = self.metrics_collector.collect(refresh_category) {
+    //         eprintln!("Error collecting metrics: {:?}", e);
+    //     };
+    // }
 
-    pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
-        match &self.metrics_collector.system_metrics {
-            MetricsHistory::History(history) => history.back(),
-            MetricsHistory::Single(metric) => Some(metric),
-        }
-    }
+    // pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
+    //     match &self.metrics_collector.system_metrics {
+    //         MetricsHistory::History(history) => history.back(),
+    //         MetricsHistory::Single(metric) => Some(metric),
+    //     }
+    // }
 
     // go to the next tab
     pub fn next_tab(&mut self) {
@@ -89,32 +90,41 @@ impl App {
         self.render_tabs(frame, chunks[0]);
 
         match &self.current_page {
-            Page::Metrics => {
-                let _ = self.draw_chart(frame, chunks[1]);
-            }
+            // Page::Metrics => {
+            //     let _ = self.draw_chart(frame, chunks[1]);
+            // }
             Page::System => {
-                let _ = self.display_system_info(frame, chunks[1]);
+                if let Metrics::SystemInfo(system_info) =
+                    self.metrics.fetch(MetricsToFetch::SystemInfo)
+                {
+                    let _ = system_info.display(frame, chunks[1]);
+                };
+
+                // let _ = self.display_system_info(frame, chunks[1]);
             }
-            Page::Processes => {
-                let _ = self.display_processes(frame, chunks[1]);
-            }
-            Page::SingleProcess(pd) => {
-                let latest_metrics = self.get_latest_metric().cloned();
-                if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
-                    self.ui_state
-                        .single_process_disk_usage
-                        .update_disk_history(process.basic_process_data.pid, &process.disk_usage);
-                    let _ = SingleProcessUI { data: process }.display_process_metrics(
-                        frame,
-                        chunks[1],
-                        latest_metrics,
-                        &mut self.ui_state,
-                    );
-                }
-            }
+            // Page::Processes => {
+            //     // if let Metrics::Processes(processes)
+            //     let _ = self.display_processes(frame, chunks[1]);
+            // }
+            Page::SingleProcess(_) => todo!(),
+            // Page::SingleProcess(pd) => {
+            //     let latest_metrics = self.get_latest_metric().cloned();
+            //     if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
+            //         self.ui_state
+            //             .single_process_disk_usage
+            //             .update_disk_history(process.basic_process_data.pid, &process.disk_usage);
+            //         let _ = SingleProcessUI { data: process }.display_process_metrics(
+            //             frame,
+            //             chunks[1],
+            //             latest_metrics,
+            //             &mut self.ui_state,
+            //         );
+            //     }
+            // }
             Page::Network => {
                 let _ = display_network_stats(frame, chunks[1]);
             }
+            _ => {}
         }
     }
 
@@ -134,124 +144,124 @@ impl App {
         frame.render_widget(tabs, area);
     }
 
-    fn display_system_info(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        let mut system_info_str = format!(
-            "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",
-            self.system_info.os_name,
-            self.system_info.os_version,
-            self.system_info.kernel_version,
-            self.system_info.hostname
-        );
+    // fn display_system_info(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+    //     let mut system_info_str = format!(
+    //         "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",
+    //         self.system_info.os_name,
+    //         self.system_info.os_version,
+    //         self.system_info.kernel_version,
+    //         self.system_info.hostname
+    //     );
 
-        let helper_instructions = "\n\n\n\n\n\n\nSwitch Tabs: Use number keys OR Tab btn OR <-, -> arrow keys\nMove selector: Up. Down arrow keys\nSelect: Enter key";
-        system_info_str.push_str(helper_instructions);
-        let paragraph = paragraph_widget(&system_info_str, "System Info");
-        frame.render_widget(
-            paragraph.alignment(ratatui::layout::Alignment::Center),
-            area,
-        );
-        Ok(())
-    }
+    //     let helper_instructions = "\n\n\n\n\n\n\nSwitch Tabs: Use number keys OR Tab btn OR <-, -> arrow keys\nMove selector: Up. Down arrow keys\nSelect: Enter key";
+    //     system_info_str.push_str(helper_instructions);
+    //     let paragraph = paragraph_widget(&system_info_str, "System Info");
+    //     frame.render_widget(
+    //         paragraph.alignment(ratatui::layout::Alignment::Center),
+    //         area,
+    //     );
+    //     Ok(())
+    // }
 
-    fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        self.update_metrics(MetricsCategory::Basic);
+    // fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+    //     self.update_metrics(MetricsCategory::Basic);
 
-        let latest_metric = match self.get_latest_metric() {
-            Some(metric) => metric,
-            None => {
-                eprintln!("No metrics available yet.");
-                &SystemMetrics::default()
-            }
-        };
+    //     let latest_metric = match self.get_latest_metric() {
+    //         Some(metric) => metric,
+    //         None => {
+    //             eprintln!("No metrics available yet.");
+    //             &SystemMetrics::default()
+    //         }
+    //     };
 
-        let layout = Layout::vertical([
-            Constraint::Percentage(23),
-            Constraint::Percentage(23),
-            Constraint::Percentage(24),
-            Constraint::Percentage(30),
-        ])
-        .split(area);
+    //     let layout = Layout::vertical([
+    //         Constraint::Percentage(23),
+    //         Constraint::Percentage(23),
+    //         Constraint::Percentage(24),
+    //         Constraint::Percentage(30),
+    //     ])
+    //     .split(area);
 
-        // render memory usage gauge
-        frame.render_widget(
-            render_gauge(
-                bytes_to_mb(latest_metric.memory_used),
-                bytes_to_mb(latest_metric.memory_total),
-                "Memory Usage",
-                "MB",
-            ),
-            layout[0],
-        );
+    //     // render memory usage gauge
+    //     frame.render_widget(
+    //         render_gauge(
+    //             bytes_to_mb(latest_metric.memory_used),
+    //             bytes_to_mb(latest_metric.memory_total),
+    //             "Memory Usage",
+    //             "MB",
+    //         ),
+    //         layout[0],
+    //     );
 
-        // render swap usage gauge
-        frame.render_widget(
-            render_gauge(
-                bytes_to_mb(latest_metric.swap_used),
-                bytes_to_mb(latest_metric.swap_total),
-                "Swap Usage",
-                "MB",
-            ),
-            layout[1],
-        );
+    //     // render swap usage gauge
+    //     frame.render_widget(
+    //         render_gauge(
+    //             bytes_to_mb(latest_metric.swap_used),
+    //             bytes_to_mb(latest_metric.swap_total),
+    //             "Swap Usage",
+    //             "MB",
+    //         ),
+    //         layout[1],
+    //     );
 
-        // render cpu usage gauge
-        frame.render_widget(
-            render_gauge(latest_metric.cpu_usage as f64, 100.0, "CPU Usage", "%"),
-            layout[2],
-        );
+    //     // render cpu usage gauge
+    //     frame.render_widget(
+    //         render_gauge(latest_metric.cpu_usage as f64, 100.0, "CPU Usage", "%"),
+    //         layout[2],
+    //     );
 
-        // --- PARAGRAPH ---
-        let memory_used =
-            latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
+    //     // --- PARAGRAPH ---
+    //     let memory_used =
+    //         latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
 
-        let text = format!(
-            "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
-            latest_metric.memory_used, latest_metric.memory_total, memory_used,
-        );
+    //     let text = format!(
+    //         "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
+    //         latest_metric.memory_used, latest_metric.memory_total, memory_used,
+    //     );
 
-        let swap_used = latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
-        let text_swap = format!(
-            "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
-            latest_metric.swap_used, latest_metric.swap_total, swap_used,
-        );
+    //     let swap_used = latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
+    //     let text_swap = format!(
+    //         "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
+    //         latest_metric.swap_used, latest_metric.swap_total, swap_used,
+    //     );
 
-        let processes_count_text = format!(
-            "CPU count: {}\nCurrent Processes count {}",
-            latest_metric.cpu_count, latest_metric.processes_count
-        );
-        let process_paragraph = paragraph_widget(&processes_count_text, "Processes Count");
+    //     let processes_count_text = format!(
+    //         "CPU count: {}\nCurrent Processes count {}",
+    //         latest_metric.cpu_count, latest_metric.processes_count
+    //     );
+    //     let process_paragraph = paragraph_widget(&processes_count_text, "Processes Count");
 
-        let paragraph = paragraph_widget(&text, "Memory Info");
-        let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
+    //     let paragraph = paragraph_widget(&text, "Memory Info");
+    //     let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
 
-        let layout_paragraph = Layout::horizontal([
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-        ])
-        .split(layout[3]);
+    //     let layout_paragraph = Layout::horizontal([
+    //         Constraint::Percentage(33),
+    //         Constraint::Percentage(33),
+    //         Constraint::Percentage(33),
+    //     ])
+    //     .split(layout[3]);
 
-        frame.render_widget(paragraph, layout_paragraph[0]);
-        frame.render_widget(swap_paragraph, layout_paragraph[1]);
-        frame.render_widget(process_paragraph, layout_paragraph[2]);
+    //     frame.render_widget(paragraph, layout_paragraph[0]);
+    //     frame.render_widget(swap_paragraph, layout_paragraph[1]);
+    //     frame.render_widget(process_paragraph, layout_paragraph[2]);
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    // display the current running processes
-    fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-        self.update_metrics(MetricsCategory::ProcessesWithoutTasks); // update processes only
+    // // display the current running processes
+    // fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+    //     self.update_metrics(MetricsCategory::ProcessesWithoutTasks); // update processes only
 
-        let processes = match self.get_latest_metric() {
-            Some(metrics) => metrics.processes.clone(),
-            None => Vec::new(),
-        };
-        let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
+    //     let processes = match self.get_latest_metric() {
+    //         Some(metrics) => metrics.processes.clone(),
+    //         None => Vec::new(),
+    //     };
+    //     let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
 
-        let table_widget = render_table(headers, &processes, "Processes");
-        frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);
-        Ok(())
-    }
+    //     let table_widget = render_table(headers, &processes, "Processes");
+    //     frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);
+    //     Ok(())
+    // }
 
     // handle quit events to close the new terminal
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
@@ -259,7 +269,7 @@ impl App {
             self.process_global_events(key);
             match self.current_page {
                 Page::Processes => {
-                    self.process_page_events(key);
+                    // self.process_page_events(key);
                 }
                 _ => {}
             }
@@ -298,34 +308,34 @@ impl App {
         }
     }
 
-    fn process_page_events(&mut self, key: KeyEvent) {
-        match key.code {
-            KeyCode::Down => {
-                let max_processes = match self.get_latest_metric() {
-                    Some(system_metrics) => system_metrics.processes_count,
-                    None => 10 as usize,
-                };
-                if let Some(selected_row) = self.ui_state.process_list.selected() {
-                    let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
-                    self.ui_state.process_list.select(Some(next_row));
-                }
-            }
-            KeyCode::Up => {
-                if let Some(selected_row) = self.ui_state.process_list.selected() {
-                    let next_row = selected_row.saturating_sub(1);
-                    self.ui_state.process_list.select(Some(next_row));
-                }
-            }
-            KeyCode::Enter => {
-                if let Some(selected_process) = self.ui_state.process_list.selected() {
-                    if let Some(selected_process_data) = self.get_latest_metric() {
-                        let process_data = &selected_process_data.processes[selected_process];
-                        // switch to a new page with path process/pid to show process_data
-                        self.current_page = Page::SingleProcess(process_data.clone());
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
+    // fn process_page_events(&mut self, key: KeyEvent) {
+    //     match key.code {
+    //         KeyCode::Down => {
+    //             let max_processes = match self.get_latest_metric() {
+    //                 Some(system_metrics) => system_metrics.processes_count,
+    //                 None => 10 as usize,
+    //             };
+    //             if let Some(selected_row) = self.ui_state.process_list.selected() {
+    //                 let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
+    //                 self.ui_state.process_list.select(Some(next_row));
+    //             }
+    //         }
+    //         KeyCode::Up => {
+    //             if let Some(selected_row) = self.ui_state.process_list.selected() {
+    //                 let next_row = selected_row.saturating_sub(1);
+    //                 self.ui_state.process_list.select(Some(next_row));
+    //             }
+    //         }
+    //         KeyCode::Enter => {
+    //             if let Some(selected_process) = self.ui_state.process_list.selected() {
+    //                 if let Some(selected_process_data) = self.get_latest_metric() {
+    //                     let process_data = &selected_process_data.processes[selected_process];
+    //                     // switch to a new page with path process/pid to show process_data
+    //                     self.current_page = Page::SingleProcess(process_data.clone());
+    //                 }
+    //             }
+    //         }
+    //         _ => {}
+    //     }
+    // }
 }

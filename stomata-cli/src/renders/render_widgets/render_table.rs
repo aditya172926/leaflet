@@ -3,7 +3,7 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Block, Borders, Cell, Row, Table},
 };
-use stomata_core::collectors::structs::ProcessData;
+use stomata_core::collectors::process::metrics::ProcessData;
 use sysinfo::Process;
 
 use crate::{structs::TableRow, utils::bytes_to_mb};

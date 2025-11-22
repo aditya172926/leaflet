@@ -8,7 +8,7 @@ pub struct SystemMetrics {
     pub memory_used: u64,
     pub memory_total: u64,
     pub swap_used: u64,
-    pub swap_total: u64
+    pub swap_total: u64,
 }
 
 #[derive(Debug)]

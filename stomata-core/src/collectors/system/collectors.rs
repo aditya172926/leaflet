@@ -1,7 +1,10 @@
 use chrono::Utc;
 use sysinfo::System;
 
-use crate::collectors::{structs::MetricsCategory, system::metrics::{SystemCollector, SystemMetrics}};
+use crate::collectors::{
+    structs::MetricsCategory,
+    system::metrics::{SystemCollector, SystemMetrics},
+};
 
 impl SystemCollector {
     pub fn fetch(refresh_kind: MetricsCategory, system: &mut System) -> Self {
@@ -16,13 +19,14 @@ impl SystemCollector {
 
         Self {
             system_metrics: SystemMetrics {
-            timestamp: Utc::now(),
-            cpu_count,
-            cpu_usage,
-            memory_used,
-            memory_total,
-            swap_used,
-            swap_total
-        }}
+                timestamp: Utc::now(),
+                cpu_count,
+                cpu_usage,
+                memory_used,
+                memory_total,
+                swap_used,
+                swap_total,
+            },
+        }
     }
 }

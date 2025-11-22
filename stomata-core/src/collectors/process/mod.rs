@@ -1,2 +1,2 @@
-pub mod metrics;
 pub mod collectors;
+pub mod metrics;

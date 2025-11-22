@@ -5,7 +5,7 @@ use ratatui::{
     layout::Constraint,
     widgets::{Cell, TableState},
 };
-use stomata_core::collectors::structs::{ProcessData, SingleProcessData};
+use stomata_core::collectors::process::metrics::{ProcessData, SingleProcessData};
 use sysinfo::DiskUsage;
 
 use crate::constants::MAX_HISTORY;

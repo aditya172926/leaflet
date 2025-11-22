@@ -1,6 +1,9 @@
 use sysinfo::{Pid, Process, System};
 
-use crate::collectors::{process::metrics::{ProcessData, SingleProcessData}, structs::MetricsCategory};
+use crate::collectors::{
+    process::metrics::{ProcessData, SingleProcessData},
+    structs::MetricsCategory,
+};
 
 impl From<&Process> for ProcessData {
     fn from(process: &Process) -> Self {
@@ -16,11 +19,8 @@ impl From<&Process> for ProcessData {
 
 impl ProcessData {
     pub fn fetch(system: &System) -> Vec<Self> {
-        let processes: Vec<ProcessData> = system
-            .processes()
-            .values()
-            .map(ProcessData::from)
-            .collect();
+        let processes: Vec<ProcessData> =
+            system.processes().values().map(ProcessData::from).collect();
         return processes;
     }
 }

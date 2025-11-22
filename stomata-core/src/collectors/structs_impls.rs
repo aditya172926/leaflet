@@ -1,14 +1,6 @@
-use anyhow::Result;
-use chrono::Utc;
-use std::collections::VecDeque;
-use sysinfo::{Pid, Process, ProcessRefreshKind, System};
+use sysinfo::{Pid, ProcessRefreshKind, System};
 
-use crate::{
-    collectors::{structs::{
-        MetricsCategory, MetricsHistory,
-    }, system::collectors::SystemCollector},
-    constants::MAX_HISTORY,
-};
+use crate::collectors::structs::MetricsCategory;
 
 impl MetricsCategory {
     pub fn refresh_metrics(&self, system: &mut System) {

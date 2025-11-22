@@ -3,7 +3,7 @@ use sysinfo::System;
 use crate::collectors::system_info::metrics::SystemInfo;
 
 impl SystemInfo {
-    pub fn new(system: &System) -> Self {
+    pub fn new() -> Self {
         Self {
             os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
             os_version: System::os_version().unwrap_or_else(|| "Unknown".to_string()),

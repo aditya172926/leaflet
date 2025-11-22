@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
-use sysinfo::System;
 
-use crate::{collectors::structs::{MetricsCategory, MetricsHistory}, constants::MAX_HISTORY};
+use crate::collectors::structs::MetricsHistory;
 
 #[derive(Debug, Default, Clone)]
 pub struct SystemMetrics {
@@ -12,4 +11,9 @@ pub struct SystemMetrics {
     pub memory_total: u64,
     pub swap_used: u64,
     pub swap_total: u64
+}
+
+#[derive(Debug)]
+pub struct SystemCollector {
+    pub system_metrics: MetricsHistory,
 }

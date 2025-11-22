@@ -1,6 +1,6 @@
 use sysinfo::{DiskUsage, Pid, Process};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct ProcessData {
     pub pid: u32,
     pub name: String,
@@ -9,6 +9,7 @@ pub struct ProcessData {
     pub status: String,
 }
 
+#[derive(Default)]
 pub struct SingleProcessData<'a> {
     pub basic_process_data: ProcessData,
     pub tasks: Vec<&'a Process>,

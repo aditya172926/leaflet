@@ -1,7 +1,5 @@
 use chrono::{DateTime, Utc};
 
-use crate::collectors::structs::MetricsHistory;
-
 #[derive(Debug, Default, Clone)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
@@ -15,5 +13,5 @@ pub struct SystemMetrics {
 
 #[derive(Debug)]
 pub struct SystemCollector {
-    pub system_metrics: MetricsHistory,
+    pub system_metrics: SystemMetrics,
 }

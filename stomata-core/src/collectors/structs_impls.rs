@@ -6,7 +6,6 @@ use sysinfo::{Pid, Process, ProcessRefreshKind, System};
 use crate::{
     collectors::{structs::{
         MetricsCategory, MetricsHistory, ProcessData, SingleProcessData,
-        SystemInfo,
     }, system::collectors::SystemCollector},
     constants::MAX_HISTORY,
 };
@@ -97,14 +96,6 @@ impl<'a> From<(&'a Process, &'a System)> for SingleProcessData<'a> {
 }
 
 impl SystemCollector {
-    pub fn system_info(&self) -> SystemInfo {
-        SystemInfo {
-            os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
-            os_version: System::os_version().unwrap_or_else(|| "Unknown".to_string()),
-            kernel_version: System::kernel_version().unwrap_or_else(|| "Unknown".to_string()),
-            hostname: System::host_name().unwrap_or_else(|| "Unknown".to_string()),
-        }
-    }
 
     pub fn get_running_processes(&self) -> Vec<ProcessData> {
         let processes: Vec<ProcessData> = self

@@ -14,14 +14,6 @@ pub enum MetricsCategory {
     Basic,        // refreshes CPU + Memory usage
 }
 
-#[derive(Debug, Clone)]
-pub struct SystemInfo {
-    pub os_name: String,
-    pub os_version: String,
-    pub kernel_version: String,
-    pub hostname: String,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProcessData {
     pub pid: u32,

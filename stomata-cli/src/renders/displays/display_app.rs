@@ -90,22 +90,26 @@ impl App {
         self.render_tabs(frame, chunks[0]);
 
         match &self.current_page {
-            // Page::Metrics => {
-            //     let _ = self.draw_chart(frame, chunks[1]);
-            // }
+            Page::Metrics => {
+                if let Metrics::SystemResource(system_collector) =
+                    self.metrics.fetch(MetricsToFetch::SystemResource)
+                {
+                    let _ = system_collector.display(frame, chunks[1], None);
+                };
+            }
             Page::System => {
                 if let Metrics::SystemInfo(system_info) =
                     self.metrics.fetch(MetricsToFetch::SystemInfo)
                 {
-                    let _ = system_info.display(frame, chunks[1]);
+                    let _ = system_info.display(frame, chunks[1], None);
                 };
-
-                // let _ = self.display_system_info(frame, chunks[1]);
             }
-            // Page::Processes => {
-            //     // if let Metrics::Processes(processes)
-            //     let _ = self.display_processes(frame, chunks[1]);
-            // }
+            Page::Processes => {
+                if let Metrics::Processes(processes) = self.metrics.fetch(MetricsToFetch::Process) {
+                    let _ = processes.display(frame, chunks[1], Some(&mut self.ui_state));
+                }
+                // let _ = self.display_processes(frame, chunks[1]);
+            }
             Page::SingleProcess(_) => todo!(),
             // Page::SingleProcess(pd) => {
             //     let latest_metrics = self.get_latest_metric().cloned();
@@ -143,110 +147,6 @@ impl App {
 
         frame.render_widget(tabs, area);
     }
-
-    // fn display_system_info(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-    //     let mut system_info_str = format!(
-    //         "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",
-    //         self.system_info.os_name,
-    //         self.system_info.os_version,
-    //         self.system_info.kernel_version,
-    //         self.system_info.hostname
-    //     );
-
-    //     let helper_instructions = "\n\n\n\n\n\n\nSwitch Tabs: Use number keys OR Tab btn OR <-, -> arrow keys\nMove selector: Up. Down arrow keys\nSelect: Enter key";
-    //     system_info_str.push_str(helper_instructions);
-    //     let paragraph = paragraph_widget(&system_info_str, "System Info");
-    //     frame.render_widget(
-    //         paragraph.alignment(ratatui::layout::Alignment::Center),
-    //         area,
-    //     );
-    //     Ok(())
-    // }
-
-    // fn draw_chart(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-    //     self.update_metrics(MetricsCategory::Basic);
-
-    //     let latest_metric = match self.get_latest_metric() {
-    //         Some(metric) => metric,
-    //         None => {
-    //             eprintln!("No metrics available yet.");
-    //             &SystemMetrics::default()
-    //         }
-    //     };
-
-    //     let layout = Layout::vertical([
-    //         Constraint::Percentage(23),
-    //         Constraint::Percentage(23),
-    //         Constraint::Percentage(24),
-    //         Constraint::Percentage(30),
-    //     ])
-    //     .split(area);
-
-    //     // render memory usage gauge
-    //     frame.render_widget(
-    //         render_gauge(
-    //             bytes_to_mb(latest_metric.memory_used),
-    //             bytes_to_mb(latest_metric.memory_total),
-    //             "Memory Usage",
-    //             "MB",
-    //         ),
-    //         layout[0],
-    //     );
-
-    //     // render swap usage gauge
-    //     frame.render_widget(
-    //         render_gauge(
-    //             bytes_to_mb(latest_metric.swap_used),
-    //             bytes_to_mb(latest_metric.swap_total),
-    //             "Swap Usage",
-    //             "MB",
-    //         ),
-    //         layout[1],
-    //     );
-
-    //     // render cpu usage gauge
-    //     frame.render_widget(
-    //         render_gauge(latest_metric.cpu_usage as f64, 100.0, "CPU Usage", "%"),
-    //         layout[2],
-    //     );
-
-    //     // --- PARAGRAPH ---
-    //     let memory_used =
-    //         latest_metric.memory_used as f64 / latest_metric.memory_total as f64 * 100.0;
-
-    //     let text = format!(
-    //         "Memory Used: {:.2} Bytes\nTotal Memory: {:.2} Bytes\nUsage: {:.2}%",
-    //         latest_metric.memory_used, latest_metric.memory_total, memory_used,
-    //     );
-
-    //     let swap_used = latest_metric.swap_used as f64 / latest_metric.swap_total as f64 * 100.0;
-    //     let text_swap = format!(
-    //         "Swap Used: {:.2} Bytes\nTotal Swap: {:.2} Bytes\nUsage: {:.2}%",
-    //         latest_metric.swap_used, latest_metric.swap_total, swap_used,
-    //     );
-
-    //     let processes_count_text = format!(
-    //         "CPU count: {}\nCurrent Processes count {}",
-    //         latest_metric.cpu_count, latest_metric.processes_count
-    //     );
-    //     let process_paragraph = paragraph_widget(&processes_count_text, "Processes Count");
-
-    //     let paragraph = paragraph_widget(&text, "Memory Info");
-    //     let swap_paragraph = paragraph_widget(&text_swap, "Swap Info");
-
-    //     let layout_paragraph = Layout::horizontal([
-    //         Constraint::Percentage(33),
-    //         Constraint::Percentage(33),
-    //         Constraint::Percentage(33),
-    //     ])
-    //     .split(layout[3]);
-
-    //     frame.render_widget(paragraph, layout_paragraph[0]);
-    //     frame.render_widget(swap_paragraph, layout_paragraph[1]);
-    //     frame.render_widget(process_paragraph, layout_paragraph[2]);
-
-    //     Ok(())
-    // }
 
     // // display the current running processes
     // fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {

@@ -1,12 +1,18 @@
 use ratatui::{Frame, layout::Rect};
 use stomata_core::collectors::SystemInfo;
 
-use crate::renders::{
-    displays::traits::Display, render_widgets::render_paragraph::paragraph_widget,
+use crate::{
+    renders::{displays::traits::Display, render_widgets::render_paragraph::paragraph_widget},
+    structs::UIState,
 };
 
 impl Display for SystemInfo {
-    fn display(&self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
+    fn display(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        ui_state: Option<&mut UIState>,
+    ) -> anyhow::Result<()> {
         let mut system_info_str = format!(
             "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",
             self.os_name, self.os_version, self.kernel_version, self.hostname

@@ -4,4 +4,5 @@ pub mod structs_impls;
 pub mod system;
 pub mod system_info;
 
+pub use process::{ProcessData, SingleProcessData};
 pub use system_info::SystemInfo;

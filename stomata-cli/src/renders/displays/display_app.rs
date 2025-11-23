@@ -6,21 +6,12 @@ use ratatui::{
     text::Line,
     widgets::{Block, Borders, Tabs},
 };
-use stomata_core::collectors::{
-    structs::{Metrics, MetricsCategory, MetricsHistory, MetricsToFetch, StomataSystemMetrics},
-    system::metrics::SystemMetrics,
-};
+use stomata_core::collectors::structs::{Metrics, MetricsToFetch, StomataSystemMetrics};
 
 use crate::{
-    renders::{
-        displays::{
-            display_network::display_network_stats, display_single_process::SingleProcessDisplay,
-            traits::Display,
-        },
-        render_widgets::{
-            render_gauge::render_gauge, render_paragraph::paragraph_widget,
-            render_table::render_table,
-        },
+    renders::displays::{
+        display_network::display_network_stats,
+        traits::{Display, SingleProcessDisplay},
     },
     structs::{Page, SingleProcessUI, UIState},
     utils::bytes_to_mb,
@@ -29,9 +20,7 @@ use crate::{
 #[derive(Debug)]
 pub struct App {
     pub render: bool,
-    // pub system_info: SystemInfo,
     pub metrics: StomataSystemMetrics,
-    // pub metrics_collector: SystemCollector,
     pub tab_index: usize,
     pub current_page: Page,
     pub store_data: bool,
@@ -96,27 +85,27 @@ impl App {
                     self.ui_state.process_table.process_count = processes.len();
                     let _ = processes.display(frame, chunks[1], Some(&mut self.ui_state));
                 }
-                // let _ = self.display_processes(frame, chunks[1]);
             }
-            Page::SingleProcess(_) => todo!(),
-            // Page::SingleProcess(pd) => {
-            //     let latest_metrics = self.get_latest_metric().cloned();
-            //     if let Some(process) = self.metrics_collector.get_process_for_pid(pd.pid) {
-            //         self.ui_state
-            //             .single_process_disk_usage
-            //             .update_disk_history(process.basic_process_data.pid, &process.disk_usage);
-            //         let _ = SingleProcessUI { data: process }.display_process_metrics(
-            //             frame,
-            //             chunks[1],
-            //             latest_metrics,
-            //             &mut self.ui_state,
-            //         );
-            //     }
-            // }
+            Page::SingleProcess(pid) => {
+                let total_memory = bytes_to_mb(self.metrics.system.total_memory());
+                if let Metrics::SingleProcessPid(Some(process)) =
+                    self.metrics.fetch(MetricsToFetch::SingleProcessPid(*pid))
+                {
+                    self.ui_state
+                        .single_process_disk_usage
+                        .update_disk_history(process.basic_process_data.pid, &process.disk_usage);
+
+                    let _ = SingleProcessUI { data: process }.display_process_metrics(
+                        frame,
+                        chunks[1],
+                        total_memory,
+                        &mut self.ui_state,
+                    );
+                }
+            }
             Page::Network => {
                 let _ = display_network_stats(frame, chunks[1]);
             }
-            _ => {}
         }
     }
 

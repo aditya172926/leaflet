@@ -9,7 +9,7 @@ use crate::collectors::{
 
 #[derive(Debug)]
 pub struct StomataSystemMetrics {
-    system: System,
+    pub system: System,
 }
 
 impl StomataSystemMetrics {

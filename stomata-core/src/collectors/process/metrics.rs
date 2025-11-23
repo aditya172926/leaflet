@@ -9,7 +9,7 @@ pub struct ProcessData {
     pub status: String,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct SingleProcessData<'a> {
     pub basic_process_data: ProcessData,
     pub tasks: Vec<&'a Process>,

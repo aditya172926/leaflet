@@ -11,7 +11,7 @@ impl Display for SystemInfo {
         &self,
         frame: &mut Frame,
         area: Rect,
-        ui_state: Option<&mut UIState>,
+        _ui_state: Option<&mut UIState>,
     ) -> anyhow::Result<()> {
         let mut system_info_str = format!(
             "\n\n\n\n\nOS name: {}\nOS version: {}\nKernel Version: {}\nHostname: {}",

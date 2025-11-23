@@ -18,7 +18,7 @@ impl Display for SystemCollector {
         &self,
         frame: &mut Frame,
         area: Rect,
-        ui_state: Option<&mut UIState>,
+        _ui_state: Option<&mut UIState>,
     ) -> anyhow::Result<()> {
         let layout = Layout::vertical([
             Constraint::Percentage(23),

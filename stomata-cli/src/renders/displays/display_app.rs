@@ -52,19 +52,6 @@ impl App {
         }
     }
 
-    // pub fn update_metrics(&mut self, refresh_category: MetricsCategory) {
-    //     if let Err(e) = self.metrics_collector.collect(refresh_category) {
-    //         eprintln!("Error collecting metrics: {:?}", e);
-    //     };
-    // }
-
-    // pub fn get_latest_metric(&self) -> Option<&SystemMetrics> {
-    //     match &self.metrics_collector.system_metrics {
-    //         MetricsHistory::History(history) => history.back(),
-    //         MetricsHistory::Single(metric) => Some(metric),
-    //     }
-    // }
-
     // go to the next tab
     pub fn next_tab(&mut self) {
         self.tab_index = (self.tab_index + 1) % Page::titles().len();
@@ -106,6 +93,7 @@ impl App {
             }
             Page::Processes => {
                 if let Metrics::Processes(processes) = self.metrics.fetch(MetricsToFetch::Process) {
+                    self.ui_state.process_table.process_count = processes.len();
                     let _ = processes.display(frame, chunks[1], Some(&mut self.ui_state));
                 }
                 // let _ = self.display_processes(frame, chunks[1]);
@@ -148,28 +136,13 @@ impl App {
         frame.render_widget(tabs, area);
     }
 
-    // // display the current running processes
-    // fn display_processes(&mut self, frame: &mut Frame, area: Rect) -> anyhow::Result<()> {
-    //     self.update_metrics(MetricsCategory::ProcessesWithoutTasks); // update processes only
-
-    //     let processes = match self.get_latest_metric() {
-    //         Some(metrics) => metrics.processes.clone(),
-    //         None => Vec::new(),
-    //     };
-    //     let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
-
-    //     let table_widget = render_table(headers, &processes, "Processes");
-    //     frame.render_stateful_widget(table_widget, area, &mut self.ui_state.process_list);
-    //     Ok(())
-    // }
-
     // handle quit events to close the new terminal
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
         if key.kind == KeyEventKind::Press {
             self.process_global_events(key);
             match self.current_page {
                 Page::Processes => {
-                    // self.process_page_events(key);
+                    self.process_page_events(key);
                 }
                 _ => {}
             }
@@ -208,34 +181,33 @@ impl App {
         }
     }
 
-    // fn process_page_events(&mut self, key: KeyEvent) {
-    //     match key.code {
-    //         KeyCode::Down => {
-    //             let max_processes = match self.get_latest_metric() {
-    //                 Some(system_metrics) => system_metrics.processes_count,
-    //                 None => 10 as usize,
-    //             };
-    //             if let Some(selected_row) = self.ui_state.process_list.selected() {
-    //                 let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
-    //                 self.ui_state.process_list.select(Some(next_row));
-    //             }
-    //         }
-    //         KeyCode::Up => {
-    //             if let Some(selected_row) = self.ui_state.process_list.selected() {
-    //                 let next_row = selected_row.saturating_sub(1);
-    //                 self.ui_state.process_list.select(Some(next_row));
-    //             }
-    //         }
-    //         KeyCode::Enter => {
-    //             if let Some(selected_process) = self.ui_state.process_list.selected() {
-    //                 if let Some(selected_process_data) = self.get_latest_metric() {
-    //                     let process_data = &selected_process_data.processes[selected_process];
-    //                     // switch to a new page with path process/pid to show process_data
-    //                     self.current_page = Page::SingleProcess(process_data.clone());
-    //                 }
-    //             }
-    //         }
-    //         _ => {}
-    //     }
-    // }
+    fn process_page_events(&mut self, key: KeyEvent) {
+        let max_processes = self.ui_state.process_table.process_count;
+        match key.code {
+            KeyCode::Down => {
+                if let Some(selected_row) = self.ui_state.process_table.process_list.selected() {
+                    let next_row = (selected_row + 1).min(max_processes.saturating_sub(1));
+                    self.ui_state
+                        .process_table
+                        .process_list
+                        .select(Some(next_row));
+                }
+            }
+            KeyCode::Up => {
+                if let Some(selected_row) = self.ui_state.process_table.process_list.selected() {
+                    let next_row = selected_row.saturating_sub(1);
+                    self.ui_state
+                        .process_table
+                        .process_list
+                        .select(Some(next_row));
+                }
+            }
+            KeyCode::Enter => {
+                if let Some(selected_process_pid) = self.ui_state.process_table.selected_pid {
+                    self.current_page = Page::SingleProcess(selected_process_pid);
+                }
+            }
+            _ => {}
+        }
+    }
 }

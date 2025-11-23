@@ -25,7 +25,7 @@ pub enum Page {
     System,
     Metrics,
     Processes,
-    SingleProcess(ProcessData), // pid
+    SingleProcess(u32), // pid
     Network,
 }
 
@@ -53,14 +53,25 @@ pub trait TableRow {
 
 #[derive(Debug)]
 pub struct UIState {
-    pub process_list: TableState,
+    pub process_table: ProcessesUIState,
     pub single_process_disk_usage: SingleProcessDiskUsage,
+}
+
+#[derive(Debug)]
+pub struct ProcessesUIState {
+    pub process_list: TableState,
+    pub process_count: usize,
+    pub selected_pid: Option<u32>,
 }
 
 impl Default for UIState {
     fn default() -> Self {
         Self {
-            process_list: TableState::default().with_selected(0),
+            process_table: ProcessesUIState {
+                process_list: TableState::default().with_selected(0),
+                process_count: 0,
+                selected_pid: None,
+            },
             single_process_disk_usage: SingleProcessDiskUsage::default(),
         }
     }

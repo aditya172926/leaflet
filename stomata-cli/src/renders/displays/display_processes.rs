@@ -13,17 +13,17 @@ impl Display for Vec<ProcessData> {
         area: Rect,
         ui_state: Option<&mut UIState>,
     ) -> anyhow::Result<()> {
-        // self.update_metrics(MetricsCategory::ProcessesWithoutTasks); // update processes only
-
-        // let processes = match self.get_latest_metric() {
-        //     Some(metrics) => metrics.processes.clone(),
-        //     None => Vec::new(),
-        // };
         let headers = vec!["PID", "Name", "CPU", "Memory", "Status"];
-
         let table_widget = render_table(headers, &self, "Processes");
         if let Some(ui_state) = ui_state {
-            frame.render_stateful_widget(table_widget, area, &mut ui_state.process_list);
+            if let Some(selected_index) = ui_state.process_table.process_list.selected() {
+                ui_state.process_table.selected_pid = Some(self[selected_index].pid);
+            };
+            frame.render_stateful_widget(
+                table_widget,
+                area,
+                &mut ui_state.process_table.process_list,
+            );
         }
         Ok(())
     }

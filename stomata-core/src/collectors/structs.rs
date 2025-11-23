@@ -15,19 +15,22 @@ pub struct StomataSystemMetrics {
 impl StomataSystemMetrics {
     pub fn new() -> Self {
         let system = System::new_all();
-
         Self { system }
     }
 
     pub fn fetch(&mut self, fetch_metrics: MetricsToFetch) -> Metrics<'_> {
         match fetch_metrics {
             MetricsToFetch::SystemInfo => Metrics::SystemInfo(SystemInfo::new()),
-            MetricsToFetch::SystemResource => Metrics::SystemResource(SystemCollector::fetch(
-                MetricsCategory::Basic,
-                &mut self.system,
-            )),
-            MetricsToFetch::Process => Metrics::Processes(ProcessData::fetch(&self.system)),
+            MetricsToFetch::SystemResource => {
+                MetricsCategory::Basic.refresh_metrics(&mut self.system);
+                Metrics::SystemResource(SystemCollector::fetch(&mut self.system))
+            }
+            MetricsToFetch::Process => {
+                MetricsCategory::ProcessesWithoutTasks.refresh_metrics(&mut self.system);
+                Metrics::Processes(ProcessData::fetch(&self.system))
+            }
             MetricsToFetch::SingleProcessPid(pid) => {
+                MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
                 Metrics::SingleProcessPid(SingleProcessData::fetch(&mut self.system, pid))
             }
         }

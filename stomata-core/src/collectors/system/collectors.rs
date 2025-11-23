@@ -1,15 +1,10 @@
 use chrono::Utc;
 use sysinfo::System;
 
-use crate::collectors::{
-    structs::MetricsCategory,
-    system::metrics::{SystemCollector, SystemMetrics},
-};
+use crate::collectors::system::metrics::{SystemCollector, SystemMetrics};
 
 impl SystemCollector {
-    pub fn fetch(refresh_kind: MetricsCategory, system: &mut System) -> Self {
-        refresh_kind.refresh_metrics(system);
-
+    pub fn fetch(system: &mut System) -> Self {
         let cpu_count = system.cpus().len();
         let cpu_usage = system.global_cpu_usage();
         let memory_used = system.used_memory();

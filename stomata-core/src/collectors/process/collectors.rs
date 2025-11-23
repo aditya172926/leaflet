@@ -1,9 +1,6 @@
 use sysinfo::{Pid, Process, System};
 
-use crate::collectors::{
-    process::metrics::{ProcessData, SingleProcessData},
-    structs::MetricsCategory,
-};
+use crate::collectors::process::metrics::{ProcessData, SingleProcessData};
 
 impl From<&Process> for ProcessData {
     fn from(process: &Process) -> Self {
@@ -52,7 +49,6 @@ impl<'a> From<(&'a Process, Vec<&'a Process>)> for SingleProcessData<'a> {
 
 impl SingleProcessData<'_> {
     pub fn fetch(system: &mut System, pid: u32) -> Option<SingleProcessData<'_>> {
-        MetricsCategory::ProcessWithPid(pid).refresh_metrics(system);
         if let Some(process) = system.process(Pid::from_u32(pid)) {
             let tasks = if let Some(task_pids) = process.tasks() {
                 task_pids

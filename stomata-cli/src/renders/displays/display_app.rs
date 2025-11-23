@@ -29,8 +29,6 @@ pub struct App {
 
 impl App {
     pub fn new(store_metrics: bool) -> Self {
-        // let collector = SystemCollector::new(store_metrics);
-        // let system_info = collector.system_info();
         Self {
             render: true,
             metrics: StomataSystemMetrics::new(),

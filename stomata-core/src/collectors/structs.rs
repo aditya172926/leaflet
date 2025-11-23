@@ -1,8 +1,9 @@
 use std::collections::VecDeque;
-use sysinfo::System;
+use sysinfo::{Networks, System};
 
 use crate::collectors::{
     SystemInfo,
+    network::metrics::NetworkMetrics,
     process::metrics::{ProcessData, SingleProcessData},
     system::metrics::{SystemCollector, SystemMetrics},
 };
@@ -10,28 +11,34 @@ use crate::collectors::{
 #[derive(Debug)]
 pub struct StomataSystemMetrics {
     pub system: System,
+    pub network: Networks,
 }
 
 impl StomataSystemMetrics {
     pub fn new() -> Self {
         let system = System::new_all();
-        Self { system }
+        let network = Networks::new();
+        Self { system, network }
     }
 
     pub fn fetch(&mut self, fetch_metrics: MetricsToFetch) -> Metrics<'_> {
         match fetch_metrics {
             MetricsToFetch::SystemInfo => Metrics::SystemInfo(SystemInfo::new()),
             MetricsToFetch::SystemResource => {
-                MetricsCategory::Basic.refresh_metrics(&mut self.system);
+                self.refresh_metrics(MetricsCategory::Basic);
                 Metrics::SystemResource(SystemCollector::fetch(&mut self.system))
             }
             MetricsToFetch::Process => {
-                MetricsCategory::ProcessesWithoutTasks.refresh_metrics(&mut self.system);
+                self.refresh_metrics(MetricsCategory::ProcessesWithoutTasks);
                 Metrics::Processes(ProcessData::fetch(&self.system))
             }
             MetricsToFetch::SingleProcessPid(pid) => {
-                MetricsCategory::ProcessWithPid(pid).refresh_metrics(&mut self.system);
+                self.refresh_metrics(MetricsCategory::ProcessWithPid(pid));
                 Metrics::SingleProcessPid(SingleProcessData::fetch(&mut self.system, pid))
+            }
+            MetricsToFetch::Networks => {
+                self.refresh_metrics(MetricsCategory::Networks);
+                Metrics::Networks(NetworkMetrics::fetch(&self.network))
             }
         }
     }
@@ -42,13 +49,16 @@ pub enum MetricsToFetch {
     SystemResource,
     Process,
     SingleProcessPid(u32),
+    Networks,
 }
 
+// Response metrics
 pub enum Metrics<'a> {
     SystemInfo(SystemInfo),
     SystemResource(SystemCollector),
     Processes(Vec<ProcessData>),
     SingleProcessPid(Option<SingleProcessData<'a>>),
+    Networks(NetworkMetrics),
 }
 
 pub enum MetricsCategory {
@@ -59,6 +69,7 @@ pub enum MetricsCategory {
     CPU,
     AllResources, // refreshes everything
     Basic,        // refreshes CPU + Memory usage
+    Networks,
 }
 
 #[derive(Debug)]

@@ -102,7 +102,11 @@ impl App {
                 }
             }
             Page::Network => {
-                let _ = display_network_stats(frame, chunks[1]);
+                if let Metrics::Networks(network_metrics) =
+                    self.metrics.fetch(MetricsToFetch::Networks)
+                {
+                    let _ = network_metrics.display(frame, chunks[1], None);
+                }
             }
         }
     }

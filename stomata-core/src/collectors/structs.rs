@@ -1,6 +1,65 @@
-use chrono::{DateTime, Utc};
 use std::collections::VecDeque;
-use sysinfo::{DiskUsage, Pid, Process, System};
+use sysinfo::{Networks, System};
+
+use crate::collectors::{
+    SystemInfo,
+    network::metrics::NetworkMetrics,
+    process::metrics::{ProcessData, SingleProcessData},
+    system::metrics::{SystemCollector, SystemMetrics},
+};
+
+#[derive(Debug)]
+pub struct StomataSystemMetrics {
+    pub system: System,
+    pub network: Networks,
+}
+
+impl StomataSystemMetrics {
+    pub fn new() -> Self {
+        let system = System::new_all();
+        let network = Networks::new();
+        Self { system, network }
+    }
+
+    pub fn fetch(&mut self, fetch_metrics: MetricsToFetch) -> Metrics<'_> {
+        match fetch_metrics {
+            MetricsToFetch::SystemInfo => Metrics::SystemInfo(SystemInfo::new()),
+            MetricsToFetch::SystemResource => {
+                self.refresh_metrics(MetricsCategory::Basic);
+                Metrics::SystemResource(SystemCollector::fetch(&mut self.system))
+            }
+            MetricsToFetch::Process => {
+                self.refresh_metrics(MetricsCategory::ProcessesWithoutTasks);
+                Metrics::Processes(ProcessData::fetch(&self.system))
+            }
+            MetricsToFetch::SingleProcessPid(pid) => {
+                self.refresh_metrics(MetricsCategory::ProcessWithPid(pid));
+                Metrics::SingleProcessPid(SingleProcessData::fetch(&mut self.system, pid))
+            }
+            MetricsToFetch::Networks => {
+                self.refresh_metrics(MetricsCategory::Networks);
+                Metrics::Networks(NetworkMetrics::fetch(&self.network))
+            }
+        }
+    }
+}
+
+pub enum MetricsToFetch {
+    SystemInfo,
+    SystemResource,
+    Process,
+    SingleProcessPid(u32),
+    Networks,
+}
+
+// Response metrics
+pub enum Metrics<'a> {
+    SystemInfo(SystemInfo),
+    SystemResource(SystemCollector),
+    Processes(Vec<ProcessData>),
+    SingleProcessPid(Option<SingleProcessData<'a>>),
+    Networks(NetworkMetrics),
+}
 
 pub enum MetricsCategory {
     ProcessesWithoutTasks, // refreshes processes but not tasks
@@ -10,52 +69,7 @@ pub enum MetricsCategory {
     CPU,
     AllResources, // refreshes everything
     Basic,        // refreshes CPU + Memory usage
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct SystemMetrics {
-    pub timestamp: DateTime<Utc>,
-    pub cpu_count: usize,
-    pub cpu_usage: f32,
-    pub memory_used: u64,
-    pub memory_total: u64,
-    pub swap_used: u64,
-    pub swap_total: u64,
-    pub processes_count: usize,
-    pub processes: Vec<ProcessData>,
-}
-
-#[derive(Debug, Clone)]
-pub struct SystemInfo {
-    pub os_name: String,
-    pub os_version: String,
-    pub kernel_version: String,
-    pub hostname: String,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ProcessData {
-    pub pid: u32,
-    pub name: String,
-    pub cpu_usage: f32,
-    pub memory: u64,
-    pub status: String,
-}
-
-pub struct SingleProcessData<'a> {
-    pub basic_process_data: ProcessData,
-    pub tasks: Vec<&'a Process>,
-    pub disk_usage: DiskUsage,
-    pub start_time: u64,
-    pub running_time: u64,
-    pub current_working_dir: Option<String>,
-    pub parent_pid: Option<Pid>,
-}
-
-#[derive(Debug)]
-pub struct SystemCollector {
-    pub system: System,
-    pub system_metrics: MetricsHistory,
+    Networks,
 }
 
 #[derive(Debug)]

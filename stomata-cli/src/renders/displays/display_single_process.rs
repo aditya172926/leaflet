@@ -1,7 +1,10 @@
 use crate::{
-    renders::render_widgets::{
-        render_gauge::render_gauge, render_paragraph::paragraph_widget,
-        render_sparkline::render_sparkline, render_table::render_table,
+    renders::{
+        displays::traits::SingleProcessDisplay,
+        render_widgets::{
+            render_gauge::render_gauge, render_paragraph::paragraph_widget,
+            render_sparkline::render_sparkline, render_table::render_table,
+        },
     },
     structs::{SingleProcessUI, UIState},
     utils::bytes_to_mb,
@@ -11,24 +14,13 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
 };
-use stomata_core::collectors::structs::SystemMetrics;
-
-pub trait SingleProcessDisplay {
-    fn display_process_metrics(
-        &self,
-        frame: &mut Frame,
-        area: Rect,
-        system_metrics: Option<SystemMetrics>,
-        ui_state: &mut UIState,
-    ) -> anyhow::Result<()>;
-}
 
 impl SingleProcessDisplay for SingleProcessUI<'_> {
     fn display_process_metrics(
         &self,
         frame: &mut Frame,
         area: Rect,
-        system_metrics: Option<SystemMetrics>,
+        total_memory: f64,
         ui_state: &mut UIState,
     ) -> anyhow::Result<()> {
         let constraints: Vec<Constraint>;
@@ -111,23 +103,19 @@ impl SingleProcessDisplay for SingleProcessUI<'_> {
         frame.render_widget(disk_write_sparkline, primary_1_layout[2]);
 
         //---- Conditional Render ----
-        if let Some(sys_metrics) = system_metrics {
-            let tertiary_constraints = [Constraint::Percentage(50), Constraint::Percentage(50)];
-            let total_memory = sys_metrics.memory_total;
-            let process_memory_use = self.data.basic_process_data.memory;
-            let memory_gauge = render_gauge(
-                bytes_to_mb(process_memory_use),
-                bytes_to_mb(total_memory),
-                "Memory",
-                "MB",
-            );
 
-            let tertiary_layout = Layout::vertical(tertiary_constraints).split(secondary_layout[1]);
-            frame.render_widget(cpu_gauge, tertiary_layout[0]);
-            frame.render_widget(memory_gauge, tertiary_layout[1]);
-        } else {
-            frame.render_widget(cpu_gauge, secondary_layout[1]);
-        }
+        let tertiary_constraints = [Constraint::Percentage(50), Constraint::Percentage(50)];
+        let process_memory_use = self.data.basic_process_data.memory;
+        let memory_gauge = render_gauge(
+            bytes_to_mb(process_memory_use),
+            total_memory,
+            "Memory",
+            "MB",
+        );
+
+        let tertiary_layout = Layout::vertical(tertiary_constraints).split(secondary_layout[1]);
+        frame.render_widget(cpu_gauge, tertiary_layout[0]);
+        frame.render_widget(memory_gauge, tertiary_layout[1]);
 
         if tasks.len() > 0 {
             let task_headers = vec!["PID", "Name", "CPU", "Memory", "Status"];

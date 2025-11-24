@@ -10,7 +10,7 @@ use stomata_core::collectors::{
 };
 use sysinfo::DiskUsage;
 
-use crate::constants::{MAX_HISTORY_IN_MEMORY, MAX_NETWORK_IN_MEMORY};
+use crate::constants::{CLAMP_TREND_VALUE, MAX_HISTORY_IN_MEMORY, MAX_NETWORK_IN_MEMORY};
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -148,14 +148,18 @@ impl Default for NetworkInterfaceData {
 
 impl NetworkInterfaceData {
     pub fn update_network_history(&mut self, network_data: &NetworkInterfaces) {
-        self.received_bytes.push(network_data.bytes_received);
-        self.transmitted_bytes.push(network_data.bytes_transmitted);
-        self.packets_received.push(network_data.packets_received);
+        self.received_bytes
+            .push_clamped(network_data.bytes_received);
+        self.transmitted_bytes
+            .push_clamped(network_data.bytes_transmitted);
+        self.packets_received
+            .push_clamped(network_data.packets_received);
         self.packets_transmitted
-            .push(network_data.packets_transmitted);
-        self.errors_received.push(network_data.errors_on_received);
+            .push_clamped(network_data.packets_transmitted);
+        self.errors_received
+            .push_clamped(network_data.errors_on_received);
         self.errors_transmitted
-            .push(network_data.errors_on_transmitted);
+            .push_clamped(network_data.errors_on_transmitted);
     }
 }
 
@@ -192,5 +196,40 @@ impl<T, const N: usize> Ring<T, N> {
 
     pub fn make_contiguous(&mut self) -> &mut [T] {
         self.inner.make_contiguous()
+    }
+}
+
+impl<T, const N: usize> Ring<T, N>
+where
+    T: Copy + Ord + From<u8>,
+{
+    pub fn push_clamped(&mut self, value: T) {
+        if self.inner.is_empty() {
+            self.push(value);
+            return;
+        }
+
+        // // count non-zero values
+        // let non_zero = self.inner.iter().filter(|v| **v > T::from(0)).count();
+
+        // // case 1: interface idle or warming up → log real spike
+        // if non_zero < 3 {
+        //     return self.push(value);
+        // }
+
+        // collect historical values
+        let mut data: Vec<T> = self.inner.iter().copied().collect();
+        data.push(value);
+
+        // compute percentile index
+        let p_index = ((data.len() - 1) as f64 * CLAMP_TREND_VALUE).round() as usize;
+
+        // nth_element selection
+        let (_, p_val, _) = data.select_nth_unstable(p_index);
+
+        // clamp
+        let clamped = if value > *p_val { *p_val } else { value };
+
+        self.push(clamped);
     }
 }

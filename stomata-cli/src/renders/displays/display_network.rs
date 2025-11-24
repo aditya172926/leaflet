@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
-    widgets::Sparkline,
 };
-use stomata_core::{NetworkMetrics, collectors::network::metrics::NetworkInterfaces};
+use stomata_core::NetworkMetrics;
 
 use crate::{
     renders::{
@@ -27,7 +26,7 @@ impl Display for NetworkMetrics {
 
         let number_of_interfaces: u16 = self.interfaces.len().try_into().unwrap_or(5);
         let constraints =
-            vec![Constraint::Percentage((100 / number_of_interfaces)); number_of_interfaces.into()];
+            vec![Constraint::Percentage(100 / number_of_interfaces); number_of_interfaces.into()];
 
         let para_layout = Layout::horizontal(&constraints).split(parent_layout[0]);
         let sparkline_layout = Layout::horizontal(&constraints).split(parent_layout[1]);

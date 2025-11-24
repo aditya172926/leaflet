@@ -182,18 +182,6 @@ impl<T, const N: usize> Ring<T, N> {
         self.inner.push_back(value);
     }
 
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.inner.iter()
-    }
-
     pub fn make_contiguous(&mut self) -> &mut [T] {
         self.inner.make_contiguous()
     }

@@ -9,10 +9,7 @@ use ratatui::{
 use stomata_core::collectors::structs::{Metrics, MetricsToFetch, StomataSystemMetrics};
 
 use crate::{
-    renders::displays::{
-        display_network::display_network_stats,
-        traits::{Display, SingleProcessDisplay},
-    },
+    renders::displays::traits::{Display, SingleProcessDisplay},
     structs::{Page, SingleProcessUI, UIState},
     utils::bytes_to_mb,
 };
@@ -105,7 +102,7 @@ impl App {
                 if let Metrics::Networks(network_metrics) =
                     self.metrics.fetch(MetricsToFetch::Networks)
                 {
-                    let _ = network_metrics.display(frame, chunks[1], None);
+                    let _ = network_metrics.display(frame, chunks[1], Some(&mut self.ui_state));
                 }
             }
         }

@@ -1,14 +1,16 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use clap::Parser;
 use ratatui::{
     layout::Constraint,
     widgets::{Cell, TableState},
 };
-use stomata_core::collectors::process::metrics::SingleProcessData;
+use stomata_core::collectors::{
+    network::metrics::NetworkInterfaces, process::metrics::SingleProcessData,
+};
 use sysinfo::DiskUsage;
 
-use crate::constants::MAX_HISTORY;
+use crate::constants::{MAX_HISTORY_IN_MEMORY, MAX_NETWORK_IN_MEMORY};
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
@@ -55,6 +57,7 @@ pub trait TableRow {
 pub struct UIState {
     pub process_table: ProcessesUIState,
     pub single_process_disk_usage: SingleProcessDiskUsage,
+    pub networks_state: Option<HashMap<String, NetworkInterfaceData>>,
 }
 
 #[derive(Debug)]
@@ -73,6 +76,7 @@ impl Default for UIState {
                 selected_pid: None,
             },
             single_process_disk_usage: SingleProcessDiskUsage::default(),
+            networks_state: None,
         }
     }
 }
@@ -92,8 +96,8 @@ impl Default for SingleProcessDiskUsage {
     fn default() -> Self {
         Self {
             pid: 0,
-            disk_read_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
-            disk_write_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY),
+            disk_read_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY_IN_MEMORY),
+            disk_write_usage: VecDeque::<u64>::with_capacity(MAX_HISTORY_IN_MEMORY),
         }
     }
 }
@@ -116,5 +120,77 @@ impl SingleProcessDiskUsage {
             self.disk_write_usage.pop_front();
         }
         self.disk_write_usage.push_back(disk_usage.written_bytes);
+    }
+}
+
+#[derive(Debug)]
+pub struct NetworkInterfaceData {
+    pub received_bytes: Ring<u64, MAX_NETWORK_IN_MEMORY>,
+    pub transmitted_bytes: Ring<u64, MAX_NETWORK_IN_MEMORY>,
+    pub packets_received: Ring<u64, MAX_NETWORK_IN_MEMORY>,
+    pub packets_transmitted: Ring<u64, MAX_NETWORK_IN_MEMORY>,
+    pub errors_received: Ring<u64, MAX_NETWORK_IN_MEMORY>,
+    pub errors_transmitted: Ring<u64, MAX_NETWORK_IN_MEMORY>,
+}
+
+impl Default for NetworkInterfaceData {
+    fn default() -> Self {
+        Self {
+            received_bytes: Ring::new(),
+            transmitted_bytes: Ring::new(),
+            packets_received: Ring::new(),
+            packets_transmitted: Ring::new(),
+            errors_received: Ring::new(),
+            errors_transmitted: Ring::new(),
+        }
+    }
+}
+
+impl NetworkInterfaceData {
+    pub fn update_network_history(&mut self, network_data: &NetworkInterfaces) {
+        self.received_bytes.push(network_data.bytes_received);
+        self.transmitted_bytes.push(network_data.bytes_transmitted);
+        self.packets_received.push(network_data.packets_received);
+        self.packets_transmitted
+            .push(network_data.packets_transmitted);
+        self.errors_received.push(network_data.errors_on_received);
+        self.errors_transmitted
+            .push(network_data.errors_on_transmitted);
+    }
+}
+
+#[derive(Debug)]
+pub struct Ring<T, const N: usize> {
+    inner: VecDeque<T>,
+}
+
+impl<T, const N: usize> Ring<T, N> {
+    pub fn new() -> Self {
+        Self {
+            inner: VecDeque::with_capacity(N),
+        }
+    }
+
+    pub fn push(&mut self, value: T) {
+        if self.inner.len() == N {
+            self.inner.pop_front();
+        }
+        self.inner.push_back(value);
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.inner.iter()
+    }
+
+    pub fn make_contiguous(&mut self) -> &mut [T] {
+        self.inner.make_contiguous()
     }
 }

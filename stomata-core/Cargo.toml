@@ -18,4 +18,3 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 sysinfo = { workspace = true }
 thiserror = "2.0.17"
-tokio = { workspace = true }

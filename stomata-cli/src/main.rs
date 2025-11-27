@@ -9,8 +9,7 @@ mod renders;
 mod structs;
 mod utils;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let store_metrics_data = cli.store;
     let mut app = App::new(store_metrics_data);

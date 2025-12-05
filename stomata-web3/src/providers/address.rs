@@ -1,4 +1,4 @@
-use sha3::{Keccak256, Digest};
+use sha3::{Digest, Keccak256};
 
 use crate::constants::EVM_ADDRESS_HEX_LENGTH;
 
@@ -6,10 +6,10 @@ pub struct AddressValidator;
 
 #[derive(Debug, PartialEq)]
 pub enum ValidationResult {
-    Valid {checksummed: String},
+    Valid { checksummed: String },
     InvalidLength,
     InvalidPrefix,
-    InvalidCharacters
+    InvalidCharacters,
 }
 
 impl AddressValidator {
@@ -33,7 +33,9 @@ impl AddressValidator {
 
         // checksum
         let checksummed = Self::checksum_encode(addr_without_prefix);
-        return ValidationResult::Valid { checksummed: format!("0x{checksummed}") };
+        return ValidationResult::Valid {
+            checksummed: format!("0x{checksummed}"),
+        };
     }
 
     fn checksum_encode(address: &str) -> String {
@@ -41,19 +43,23 @@ impl AddressValidator {
         let hash = Self::keccak256(address_lower.as_bytes());
         let hash_hex = hex::encode(hash);
 
-        address_lower.chars().enumerate().map(|(i, c)| {
-            if c.is_ascii_digit() {
-                c
-            } else {
-                let hash_char = hash_hex.chars().nth(i).unwrap();
-                let hash_value = hash_char.to_digit(16).unwrap();
-                if hash_value >= 8 {
-                    c.to_ascii_uppercase()
-                } else {
+        address_lower
+            .chars()
+            .enumerate()
+            .map(|(i, c)| {
+                if c.is_ascii_digit() {
                     c
+                } else {
+                    let hash_char = hash_hex.chars().nth(i).unwrap();
+                    let hash_value = hash_char.to_digit(16).unwrap();
+                    if hash_value >= 8 {
+                        c.to_ascii_uppercase()
+                    } else {
+                        c
+                    }
                 }
-            }
-        }).collect()
+            })
+            .collect()
     }
 
     fn keccak256(data: &[u8]) -> [u8; 32] {

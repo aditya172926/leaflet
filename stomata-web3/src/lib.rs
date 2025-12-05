@@ -1,2 +1,2 @@
-pub mod providers;
 pub mod constants;
+pub mod providers;

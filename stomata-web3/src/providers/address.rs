@@ -4,13 +4,12 @@ use crate::constants::EVM_ADDRESS_HEX_LENGTH;
 
 pub struct AddressValidator;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ValidationResult {
     Valid {checksummed: String},
     InvalidLength,
     InvalidPrefix,
-    InvalidCharacters,
-    InvalidChecksum,
+    InvalidCharacters
 }
 
 impl AddressValidator {
@@ -34,9 +33,7 @@ impl AddressValidator {
 
         // checksum
         let checksummed = Self::checksum_encode(addr_without_prefix);
-
         return ValidationResult::Valid { checksummed: format!("0x{checksummed}") };
-
     }
 
     fn checksum_encode(address: &str) -> String {
@@ -63,5 +60,45 @@ impl AddressValidator {
         let mut hasher = Keccak256::new();
         hasher.update(data);
         hasher.finalize().into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_checksummed_address() {
+        let addr = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
+        let result = AddressValidator::validate(addr);
+        assert!(matches!(result, ValidationResult::Valid { .. }))
+    }
+
+    #[test]
+    fn test_valid_lowercase_address() {
+        let addr = "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed";
+        let result = AddressValidator::validate(addr);
+        assert!(matches!(result, ValidationResult::Valid { .. }));
+    }
+
+    #[test]
+    fn test_invalid_length() {
+        let addr = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAe";
+        let result = AddressValidator::validate(addr);
+        assert_eq!(result, ValidationResult::InvalidLength);
+    }
+
+    #[test]
+    fn test_invalid_prefix() {
+        let addr = "5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed12";
+        let result = AddressValidator::validate(addr);
+        assert_eq!(result, ValidationResult::InvalidPrefix);
+    }
+
+    #[test]
+    fn test_invalid_characters() {
+        let addr = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeZ";
+        let result = AddressValidator::validate(addr);
+        assert_eq!(result, ValidationResult::InvalidCharacters);
     }
 }

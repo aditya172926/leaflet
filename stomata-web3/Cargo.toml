@@ -7,3 +7,5 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+hex = "0.4.3"
+sha3 = "0.10.8"

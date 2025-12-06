@@ -2,7 +2,9 @@ use std::collections::{HashMap, VecDeque};
 
 use clap::Parser;
 use ratatui::{
-    Frame, layout::Constraint, widgets::{Cell, TableState}
+    Frame,
+    layout::Constraint,
+    widgets::{Cell, TableState},
 };
 use stomata_core::collectors::{
     network::metrics::NetworkInterfaces, process::metrics::SingleProcessData,
@@ -16,17 +18,17 @@ pub enum Feature {
     #[cfg(feature = "core")]
     Core,
     #[cfg(feature = "web3")]
-    Web3
+    Web3,
 }
 
 pub enum AppState {
     FeatureSelection,
-    RunningFeature(Feature)
+    RunningFeature(Feature),
 }
 pub struct StomataState {
     pub state: AppState,
     pub selected_feature: usize,
-    pub available_features: Vec<Feature>
+    pub available_features: Vec<Feature>,
 }
 
 #[derive(Parser, Debug)]

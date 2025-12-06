@@ -5,11 +5,11 @@ use clap::Parser;
 use ratatui::crossterm::event::{self, Event};
 
 mod constants;
+mod features;
 mod renders;
+mod stomata_state;
 mod structs;
 mod utils;
-mod features;
-mod stomata_state;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();

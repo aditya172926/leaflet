@@ -1,1 +1,3 @@
-## Web3 crate feature for stomata
+## Web3 lib
+
+This lib can be used with Stomata-CLI for interactive display and interaction.

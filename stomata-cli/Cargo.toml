@@ -14,10 +14,19 @@ categories = ["command-line-utilities"]
 name = "stomata"
 path = "src/main.rs"
 
+[package.metadata.rust-analyzer]
+cargo.features = "all"
+
 [dependencies]
 ratatui = "0.29.0"
 anyhow = { workspace = true }
 clap = { version = "4.5.50", features = ["derive"] }
-stomata-core = { version = "0.1.5", path = '../stomata-core' }
+stomata-core = { version = "0.1.5", path = '../stomata-core', optional = true }
+stomata-web3 = { version = "0.0.1", path = '../stomata-web3', optional = true }
 sysinfo = { workspace = true }
 chrono = { workspace = true }
+
+[features]
+default = ["core", "web3"]
+core = ["dep:stomata-core"]
+web3 = ["dep:stomata-web3"]

@@ -12,6 +12,41 @@ use sysinfo::DiskUsage;
 
 use crate::constants::{CLAMP_TREND_VALUE, MAX_HISTORY_IN_MEMORY, MAX_NETWORK_IN_MEMORY};
 
+pub enum Feature {
+    #[cfg(feature = "core")]
+    Core,
+    #[cfg(feature = "web3")]
+    Web3
+}
+
+pub enum AppState {
+    FeatureSelection,
+    RunningFeature(Feature)
+}
+pub struct StomataState {
+    state: AppState,
+    selected_feature: usize,
+    available_features: Vec<Feature>
+}
+
+impl StomataState {
+    fn new() -> Self {
+        let mut available_features = Vec::new();
+        
+        #[cfg(feature = "core")]
+        available_features.push(Feature::Core);
+
+        #[cfg(feature = "web3")]
+        available_features.push(Feature::Web3);
+
+        Self {
+            state: AppState::FeatureSelection,
+            selected_feature: 0,
+            available_features
+        }
+    }
+}
+
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]
 #[command(version, about, long_about = None)]

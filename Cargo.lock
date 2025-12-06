@@ -742,6 +742,7 @@ dependencies = [
  "clap",
  "ratatui",
  "stomata-core",
+ "stomata-web3",
  "sysinfo",
 ]
 

@@ -8,6 +8,7 @@ mod constants;
 mod renders;
 mod structs;
 mod utils;
+mod features;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();

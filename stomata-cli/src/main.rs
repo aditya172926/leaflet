@@ -5,7 +5,6 @@ use crate::{
     renders::core_displays::display_app::App,
     structs::{AppState, Cli, StomataState},
 };
-use anyhow::Ok;
 use clap::Parser;
 use ratatui::crossterm::event::{self, Event};
 
@@ -39,10 +38,14 @@ fn main() -> anyhow::Result<()> {
             }
             AppState::RunningFeature(feature) => {
                 // Run the selected feature
-                run_feature(feature, &cli, &mut terminal)?;
-
-                if let Event::Key(key) = event::read()? {
-                    if !app.handle_feature_selection(key) {
+                match run_feature(feature, &cli, &mut terminal) {
+                    Ok(render) => {
+                        if !render {
+                            app.state = AppState::FeatureSelection;
+                        }
+                    }
+                    Err(_) => {
+                        eprint!("Error in rendering feature");
                         app.state = AppState::FeatureSelection;
                     }
                 }

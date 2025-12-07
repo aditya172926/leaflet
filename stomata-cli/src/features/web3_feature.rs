@@ -126,7 +126,7 @@ impl Web3State {
     }
 }
 
-pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<()> {
+pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<bool> {
     let mut web3_state = Web3State::new();
 
     // get the refresh interval from the cli arg. Default 1000 ms
@@ -154,5 +154,5 @@ pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyh
             last_tick = Instant::now();
         }
     }
-    Ok(())
+    Ok(web3_state.render)
 }

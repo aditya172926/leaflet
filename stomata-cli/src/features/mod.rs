@@ -14,7 +14,7 @@ pub fn run_feature(
     feature: Feature,
     cli: &Cli,
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<bool> {
     match feature {
         #[cfg(feature = "core")]
         Feature::Core => core_feature::run(cli, terminal),

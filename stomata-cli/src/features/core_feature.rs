@@ -11,7 +11,7 @@ use ratatui::{
 
 use crate::{renders::core_displays::display_app::App, structs::Cli};
 
-pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<()> {
+pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<bool> {
     let store_metrics_data = cli.store;
     let mut app = App::new(store_metrics_data);
 
@@ -41,5 +41,5 @@ pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyh
             last_tick = Instant::now();
         }
     }
-    Ok(())
+    Ok(app.render)
 }

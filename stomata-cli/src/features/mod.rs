@@ -7,6 +7,9 @@ use crate::structs::{Cli, Feature};
 #[cfg(feature = "core")]
 pub mod core_feature;
 
+#[cfg(feature = "web3")]
+pub mod web3_feature;
+
 pub fn run_feature(
     feature: Feature,
     cli: &Cli,

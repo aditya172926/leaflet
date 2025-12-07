@@ -15,7 +15,7 @@ use crate::{
 };
 
 impl StomataState {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let mut available_features = Vec::new();
 
         #[cfg(feature = "core")]
@@ -31,7 +31,7 @@ impl StomataState {
         }
     }
 
-    fn render_feature_selection(&self, frame: &mut Frame) {
+    pub fn render_feature_selection(&self, frame: &mut Frame) {
         let chunks =
             Layout::vertical([Constraint::Length(5), Constraint::Min(10)]).split(frame.area());
 
@@ -90,7 +90,7 @@ impl StomataState {
         }
     }
 
-    fn handle_feature_selection(&mut self, key: KeyEvent) -> bool {
+    pub fn handle_feature_selection(&mut self, key: KeyEvent) -> bool {
         match key.code {
             KeyCode::Up => {
                 if self.selected_feature > 0 {

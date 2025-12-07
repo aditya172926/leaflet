@@ -2,6 +2,7 @@ use std::collections::{HashMap, VecDeque};
 
 use clap::Parser;
 use ratatui::{
+    Frame,
     layout::Constraint,
     widgets::{Cell, TableState},
 };
@@ -11,6 +12,24 @@ use stomata_core::collectors::{
 use sysinfo::DiskUsage;
 
 use crate::constants::{CLAMP_TREND_VALUE, MAX_HISTORY_IN_MEMORY, MAX_NETWORK_IN_MEMORY};
+
+#[derive(Debug, Clone, Copy)]
+pub enum Feature {
+    #[cfg(feature = "core")]
+    Core,
+    #[cfg(feature = "web3")]
+    Web3,
+}
+
+pub enum AppState {
+    FeatureSelection,
+    RunningFeature(Feature),
+}
+pub struct StomataState {
+    pub state: AppState,
+    pub selected_feature: usize,
+    pub available_features: Vec<Feature>,
+}
 
 #[derive(Parser, Debug)]
 #[command(name = "stomata")]

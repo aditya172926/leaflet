@@ -19,6 +19,6 @@ pub fn run_feature(
         #[cfg(feature = "core")]
         Feature::Core => core_feature::run(cli, terminal),
         #[cfg(feature = "web3")]
-        Feature::Web3 => Ok({}),
+        Feature::Web3 => web3_feature::run(cli, terminal),
     }
 }

@@ -8,7 +8,7 @@ authors.workspace = true
 repository.workspace = true
 keywords = ["web3", "tools", "monitoring", "cli"]
 readme = "./README.md"
-categories = ["development-tools::tooling"]
+categories = ["command-line-utilities"]
 
 
 [lib]

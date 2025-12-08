@@ -80,6 +80,20 @@ stomata
 stomata --interval 1000
 ```
 
+## Stomata Modes
+Stomata now comes in 2 modes of operations Interactive and Non-Interactive. Both of these modes implement different features that users can use.
+
+### Non-interactive mode
+In this mode, which is the default mode users can use stomata features that don't require a TUI and just want a quick output from the feature.
+Currently a non-interactive feature for EVM address validation check is implemented in [Stomata Web3 crate. Example use in README](./stomata-web3/README.md)
+
+### Interactive
+In this mode, Stomata cli renders a terminal UI enabling users to see and interact with it. Currently the stomata-core crate implements such features that are interactive.
+You can use this command to enable stomata in interactive mode and checkout features available
+```
+stomata -i
+```
+
 ## Building from Source
 
 Requires Rust 1.90.0+

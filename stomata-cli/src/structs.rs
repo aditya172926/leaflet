@@ -28,17 +28,23 @@ pub enum AppState {
 pub struct StomataState {
     pub state: AppState,
     pub selected_feature: usize,
-    pub available_features: Vec<Feature>,
+    pub available_features: HashMap<String, Feature>,
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(name = "stomata")]
 #[command(version, about, long_about = None)]
 pub struct Cli {
-    #[arg(short, long, default_value_t = 1000)]
+    #[arg(short = 'i', long, default_value_t = false)]
+    pub interactive: bool,
+    #[arg(short = 't', long, default_value_t = 1000)]
     pub interval: u64,
     #[arg(short, long, default_value_t = false)]
     pub store: bool,
+    pub feature: Option<String>,
+    /// Arguments passed to the feature
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    pub args: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

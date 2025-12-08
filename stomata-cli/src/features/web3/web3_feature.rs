@@ -1,8 +1,11 @@
 use std::{
     io::Stdout,
+    iter::once,
+    process::exit,
     time::{Duration, Instant},
 };
 
+use clap::Parser;
 use ratatui::{
     Frame, Terminal,
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
@@ -13,7 +16,14 @@ use ratatui::{
     widgets::{Block, Borders, Tabs},
 };
 
-use crate::{renders::render_widgets::render_paragraph::paragraph_widget, structs::Cli};
+use crate::{
+    features::web3::cli::{Web3Cli, Web3Tool},
+    renders::{
+        render_widgets::render_paragraph::paragraph_widget,
+        web3_displays::address_validation::validate_address,
+    },
+    structs::Cli,
+};
 
 pub enum Web3Page {
     AddressValidation,
@@ -126,33 +136,56 @@ impl Web3State {
     }
 }
 
-pub fn run(cli: &Cli, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<bool> {
+pub fn run(
+    cli: &Cli,
+    terminal: Option<&mut Terminal<CrosstermBackend<Stdout>>>,
+) -> anyhow::Result<bool> {
     let mut web3_state = Web3State::new();
 
-    // get the refresh interval from the cli arg. Default 1000 ms
-    let refresh_interval = Duration::from_millis(cli.interval);
-    let mut last_tick = Instant::now();
+    match terminal {
+        Some(terminal) => {
+            // get the refresh interval from the cli arg. Default 1000 ms
+            let refresh_interval = Duration::from_millis(cli.interval);
+            let mut last_tick = Instant::now();
 
-    while web3_state.render {
-        let timeout = refresh_interval
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or(Duration::from_secs(0));
+            while web3_state.render {
+                let timeout = refresh_interval
+                    .checked_sub(last_tick.elapsed())
+                    .unwrap_or(Duration::from_secs(0));
 
-        // poll for inputs only until timeout
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                // handle events
-                web3_state.handle_events(key)?;
-                // redraw immediately after an event
-                terminal.draw(|frame| web3_state.render(frame))?;
+                // poll for inputs only until timeout
+                if event::poll(timeout)? {
+                    if let Event::Key(key) = event::read()? {
+                        // handle events
+                        web3_state.handle_events(key)?;
+                        // redraw immediately after an event
+                        terminal.draw(|frame| web3_state.render(frame))?;
+                    }
+                }
+
+                if last_tick.elapsed() >= refresh_interval {
+                    // draw
+                    terminal.draw(|frame| web3_state.render(frame))?;
+                    last_tick = Instant::now();
+                }
             }
+            Ok(web3_state.render)
         }
-
-        if last_tick.elapsed() >= refresh_interval {
-            // draw
-            terminal.draw(|frame| web3_state.render(frame))?;
-            last_tick = Instant::now();
+        None => {
+            let web3_cli =
+                Web3Cli::try_parse_from(once("web3".to_string()).chain(cli.args.iter().cloned()));
+            match web3_cli {
+                Ok(cli) => {
+                    match cli.tool {
+                        Web3Tool::AddressValidator { address } => validate_address(&address),
+                    };
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                    exit(1);
+                }
+            };
+            Ok(false)
         }
     }
-    Ok(web3_state.render)
 }

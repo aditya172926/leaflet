@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent},
@@ -16,13 +18,13 @@ use crate::{
 
 impl StomataState {
     pub fn new() -> Self {
-        let mut available_features = Vec::new();
+        let mut available_features = HashMap::new();
 
         #[cfg(feature = "core")]
-        available_features.push(Feature::Core);
+        available_features.insert("core".to_string(), Feature::Core);
 
         #[cfg(feature = "web3")]
-        available_features.push(Feature::Web3);
+        available_features.insert("web3".to_string(), Feature::Web3);
 
         Self {
             state: AppState::FeatureSelection,
@@ -49,7 +51,7 @@ impl StomataState {
             let items: Vec<ListItem> = self
                 .available_features
                 .iter()
-                .map(|feature| {
+                .map(|(key, feature)| {
                     let (name, desc) = match feature {
                         Feature::Core => (
                             "System Monitor",
@@ -103,7 +105,8 @@ impl StomataState {
                 }
             }
             KeyCode::Enter => {
-                if let Some(&feature) = self.available_features.get(self.selected_feature) {
+                if let Some(&feature) = self.available_features.values().nth(self.selected_feature)
+                {
                     self.state = AppState::RunningFeature(feature);
                 }
             }

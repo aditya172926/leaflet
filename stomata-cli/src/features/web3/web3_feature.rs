@@ -86,7 +86,10 @@ impl Web3State {
 
         match &self.current_page {
             Web3Page::AddressValidation => {
-                let para = paragraph_widget("Hi! We are adding more interactive features to Stomata Web3", "About");
+                let para = paragraph_widget(
+                    "Hi! We are adding more interactive features to Stomata Web3",
+                    "About",
+                );
                 frame.render_widget(para, chunks[1]);
             }
         }

@@ -1,5 +1,8 @@
 .PHONY: build release
 
+fmt:
+	cargo fmt --all
+
 build:
 	cargo fmt --all
 	cargo check --all

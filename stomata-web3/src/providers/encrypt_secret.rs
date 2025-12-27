@@ -1,7 +1,4 @@
-use aes_gcm::{
-    Aes256Gcm, KeyInit, Nonce,
-    aead::Aead,
-};
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use argon2::Argon2;
 use rand::random;
 
@@ -104,11 +101,11 @@ mod tests {
         let private_key = b"my_super_secret_private_key_1234";
         let password = "strong_password_123";
 
-        let encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
-        let decrypted = decrypt_private_key(&encrypted, password)
-            .expect("Decryption should succeed");
+        let decrypted =
+            decrypt_private_key(&encrypted, password).expect("Decryption should succeed");
 
         assert_eq!(private_key.as_slice(), decrypted.as_slice());
     }
@@ -119,12 +116,15 @@ mod tests {
         let password = "correct_password";
         let wrong_password = "wrong_password";
 
-        let encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
         let decrypted = decrypt_private_key(&encrypted, wrong_password);
 
-        assert!(decrypted.is_none(), "Decryption with wrong password should fail");
+        assert!(
+            decrypted.is_none(),
+            "Decryption with wrong password should fail"
+        );
     }
 
     #[test]
@@ -135,8 +135,8 @@ mod tests {
         let encrypted = encrypt_private_key(private_key, password)
             .expect("Encryption of empty data should succeed");
 
-        let decrypted = decrypt_private_key(&encrypted, password)
-            .expect("Decryption should succeed");
+        let decrypted =
+            decrypt_private_key(&encrypted, password).expect("Decryption should succeed");
 
         assert_eq!(private_key.as_slice(), decrypted.as_slice());
     }
@@ -146,11 +146,11 @@ mod tests {
         let private_key = vec![0u8; 10000];
         let password = "password";
 
-        let encrypted = encrypt_private_key(&private_key, password)
-            .expect("Encryption should succeed");
+        let encrypted =
+            encrypt_private_key(&private_key, password).expect("Encryption should succeed");
 
-        let decrypted = decrypt_private_key(&encrypted, password)
-            .expect("Decryption should succeed");
+        let decrypted =
+            decrypt_private_key(&encrypted, password).expect("Decryption should succeed");
 
         assert_eq!(private_key, decrypted);
     }
@@ -160,11 +160,11 @@ mod tests {
         let private_key = b"secret_key";
         let password = "p@ssw0rd!#$%^&*()_+-=[]{}|;:,.<>?/~`";
 
-        let encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
-        let decrypted = decrypt_private_key(&encrypted, password)
-            .expect("Decryption should succeed");
+        let decrypted =
+            decrypt_private_key(&encrypted, password).expect("Decryption should succeed");
 
         assert_eq!(private_key.as_slice(), decrypted.as_slice());
     }
@@ -174,15 +174,18 @@ mod tests {
         let private_key = b"same_key";
         let password = "same_password";
 
-        let encrypted1 = encrypt_private_key(private_key, password)
-            .expect("First encryption should succeed");
-        let encrypted2 = encrypt_private_key(private_key, password)
-            .expect("Second encryption should succeed");
+        let encrypted1 =
+            encrypt_private_key(private_key, password).expect("First encryption should succeed");
+        let encrypted2 =
+            encrypt_private_key(private_key, password).expect("Second encryption should succeed");
 
         // Salt and nonce should be different
         assert_ne!(encrypted1.crypto_key.salt, encrypted2.crypto_key.salt);
         assert_ne!(encrypted1.crypto_key.nonce, encrypted2.crypto_key.nonce);
-        assert_ne!(encrypted1.crypto_key.ciphertext, encrypted2.crypto_key.ciphertext);
+        assert_ne!(
+            encrypted1.crypto_key.ciphertext,
+            encrypted2.crypto_key.ciphertext
+        );
 
         // But both should decrypt to the same plaintext
         let decrypted1 = decrypt_private_key(&encrypted1, password).unwrap();
@@ -196,14 +199,17 @@ mod tests {
         let private_key = b"secret_key";
         let password = "password";
 
-        let mut encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let mut encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
         // Corrupt the salt
         encrypted.crypto_key.salt = "invalid_hex_string".to_string();
 
         let decrypted = decrypt_private_key(&encrypted, password);
-        assert!(decrypted.is_none(), "Decryption with corrupted salt should fail");
+        assert!(
+            decrypted.is_none(),
+            "Decryption with corrupted salt should fail"
+        );
     }
 
     #[test]
@@ -211,14 +217,17 @@ mod tests {
         let private_key = b"secret_key";
         let password = "password";
 
-        let mut encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let mut encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
         // Corrupt the nonce
         encrypted.crypto_key.nonce = "not_valid_hex".to_string();
 
         let decrypted = decrypt_private_key(&encrypted, password);
-        assert!(decrypted.is_none(), "Decryption with corrupted nonce should fail");
+        assert!(
+            decrypted.is_none(),
+            "Decryption with corrupted nonce should fail"
+        );
     }
 
     #[test]
@@ -226,8 +235,8 @@ mod tests {
         let private_key = b"secret_key";
         let password = "password";
 
-        let mut encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let mut encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
         // Corrupt the ciphertext by flipping a bit
         let mut bytes = hex::decode(&encrypted.crypto_key.ciphertext).unwrap();
@@ -237,7 +246,10 @@ mod tests {
         encrypted.crypto_key.ciphertext = hex::encode(bytes);
 
         let decrypted = decrypt_private_key(&encrypted, password);
-        assert!(decrypted.is_none(), "Decryption with corrupted ciphertext should fail");
+        assert!(
+            decrypted.is_none(),
+            "Decryption with corrupted ciphertext should fail"
+        );
     }
 
     #[test]
@@ -245,11 +257,11 @@ mod tests {
         let private_key: Vec<u8> = (0..=255).collect();
         let password = "password";
 
-        let encrypted = encrypt_private_key(&private_key, password)
-            .expect("Encryption should succeed");
+        let encrypted =
+            encrypt_private_key(&private_key, password).expect("Encryption should succeed");
 
-        let decrypted = decrypt_private_key(&encrypted, password)
-            .expect("Decryption should succeed");
+        let decrypted =
+            decrypt_private_key(&encrypted, password).expect("Decryption should succeed");
 
         assert_eq!(private_key, decrypted);
     }
@@ -259,8 +271,8 @@ mod tests {
         let private_key = b"test_key";
         let password = "password";
 
-        let encrypted = encrypt_private_key(private_key, password)
-            .expect("Encryption should succeed");
+        let encrypted =
+            encrypt_private_key(private_key, password).expect("Encryption should succeed");
 
         // Verify all fields are valid hex strings
         assert!(hex::decode(&encrypted.crypto_key.salt).is_ok());
@@ -270,7 +282,7 @@ mod tests {
         // Verify expected lengths
         let salt_bytes = hex::decode(&encrypted.crypto_key.salt).unwrap();
         let nonce_bytes = hex::decode(&encrypted.crypto_key.nonce).unwrap();
-        
+
         assert_eq!(salt_bytes.len(), 16, "Salt should be 16 bytes");
         assert_eq!(nonce_bytes.len(), 12, "Nonce should be 12 bytes");
     }

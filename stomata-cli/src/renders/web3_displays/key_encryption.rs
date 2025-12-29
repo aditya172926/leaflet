@@ -1,9 +1,6 @@
 use std::process::exit;
 
-use stomata_web3::providers::{
-    encrypt_secret::{decrypt_private_key, encrypt_private_key},
-    store_key,
-};
+use stomata_web3::providers::store_key;
 
 pub fn encrypt_key(name: String, pk: String) {
     let password = match rpassword::prompt_password("Add Password: ") {

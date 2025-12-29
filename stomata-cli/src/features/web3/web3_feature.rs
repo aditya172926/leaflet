@@ -17,7 +17,7 @@ use ratatui::{
 };
 
 use crate::{
-    features::web3::cli::{Web3Cli, Web3Tool},
+    features::web3::cli::{KeySubCommands, Web3Cli, Web3Tool},
     renders::{
         render_widgets::render_paragraph::paragraph_widget,
         web3_displays::{address_validation::validate_address, key_encryption::encrypt_key},
@@ -181,7 +181,11 @@ pub fn run(
                 Ok(cli) => {
                     match cli.tool {
                         Web3Tool::AddressValidator { address } => validate_address(&address),
-                        Web3Tool::EncryptKey { name, key } => encrypt_key(name, key),
+                        Web3Tool::Key(key_cmd) => {
+                            match key_cmd {
+                                KeySubCommands::Encrypt { name, key } => encrypt_key(name, key),
+                            }
+                        }
                     };
                 }
                 Err(e) => {

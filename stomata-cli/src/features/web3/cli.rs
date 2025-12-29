@@ -17,13 +17,19 @@ pub enum Web3Tool {
         #[arg(short, long, required = true)]
         address: String,
     },
-    #[command(name = "encrypt-key", alias = "ek")]
-    EncryptKey {
-        // key name
+    #[command(subcommand)]
+    Key(KeySubCommands) ,
+}
+
+#[derive(Subcommand, Clone)]
+pub enum KeySubCommands {
+    Encrypt {
+        // Name of the key to encrypt
         #[arg(short, long, required = true)]
         name: String,
+
         // Key to encrypt
         #[arg(short, long, required = true)]
-        key: String,
-    },
+        key: String
+    }
 }

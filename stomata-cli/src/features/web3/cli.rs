@@ -17,4 +17,10 @@ pub enum Web3Tool {
         #[arg(short, long, required = true)]
         address: String,
     },
+    #[command(name = "encrypt-key", alias = "ek")]
+    EncryptKey {
+        // Key to encrypt
+        #[arg(short, long, required = true)]
+        key: String,
+    },
 }

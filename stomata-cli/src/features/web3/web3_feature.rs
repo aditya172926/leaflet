@@ -20,7 +20,7 @@ use crate::{
     features::web3::cli::{Web3Cli, Web3Tool},
     renders::{
         render_widgets::render_paragraph::paragraph_widget,
-        web3_displays::address_validation::validate_address,
+        web3_displays::{address_validation::validate_address, key_encryption::encrypt_key},
     },
     structs::Cli,
 };
@@ -181,6 +181,7 @@ pub fn run(
                 Ok(cli) => {
                     match cli.tool {
                         Web3Tool::AddressValidator { address } => validate_address(&address),
+                        Web3Tool::EncryptKey { key } => encrypt_key(key),
                     };
                 }
                 Err(e) => {

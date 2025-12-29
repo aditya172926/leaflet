@@ -2,10 +2,12 @@ use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use argon2::Argon2;
 use rand::random;
 
+#[derive(Debug)]
 pub struct EncryptPrivateKey {
     pub crypto_key: CryptoData,
 }
 
+#[derive(Debug)]
 pub struct CryptoData {
     pub cipher: String,
     pub salt: String,

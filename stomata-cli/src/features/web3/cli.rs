@@ -46,4 +46,10 @@ pub enum KeySubCommands {
     },
     #[command(name = "list", alias = "l")]
     List {},
+    #[command(name = "delete", alias = "del")]
+    Delete {
+        // Name of the key to decrypt
+        #[arg(short, long, required = true)]
+        name: String,
+    },
 }

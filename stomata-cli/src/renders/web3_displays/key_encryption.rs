@@ -1,6 +1,6 @@
 use std::process::exit;
 
-use stomata_web3::providers::{list_keys, retrieve_key, store_key};
+use stomata_web3::providers::{delete_key, list_keys, retrieve_key, store_key};
 
 use crate::features::web3::cli::OutputFormat;
 
@@ -44,5 +44,11 @@ pub fn list_all_keys() {
         for key in res {
             println!("{key}");
         }
+    }
+}
+
+pub fn delete_encrypted_key(name: String) {
+    if let Err(err) = delete_key(&name) {
+        eprintln!("Error in deleting key {name}: {:?}", err);
     }
 }

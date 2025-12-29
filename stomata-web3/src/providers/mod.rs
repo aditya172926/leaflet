@@ -3,5 +3,5 @@ mod key_encryption;
 
 pub use key_encryption::{
     encrypt_secret,
-    store_secrets::{list_keys, retrieve_key, store_key},
+    store_secrets::{delete_key, list_keys, retrieve_key, store_key},
 };

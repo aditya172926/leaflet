@@ -1,3 +1,5 @@
+use std::{io, path::PathBuf};
+
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use argon2::Argon2;
 use rand::random;
@@ -5,6 +7,13 @@ use rand::random;
 #[derive(Debug)]
 pub struct EncryptPrivateKey {
     pub crypto_key: CryptoData,
+    pub metadata: Option<KeyMetadata>
+}
+
+#[derive(Debug)]
+pub struct KeyMetadata {
+    pub name: String,
+    pub created_at: String
 }
 
 #[derive(Debug)]
@@ -14,6 +23,43 @@ pub struct CryptoData {
     pub nonce: String,
     pub ciphertext: String,
 }
+
+#[derive(Debug)]
+pub enum StorageError {
+    IoError(io::Error),
+    SerdeError(serde_json::Error),
+    KeyNotFound(String),
+    KeyAlreadyExists(String),
+    InvalidKeyName(String),
+}
+
+impl From<io::Error> for StorageError {
+    fn from(err: io::Error) -> Self {
+        StorageError::IoError(err)
+    }
+}
+
+impl From<serde_json::Error> for StorageError {
+    fn from(err: serde_json::Error) -> Self {
+        StorageError::SerdeError(err)
+    }
+}
+
+impl std::fmt::Display for StorageError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            StorageError::IoError(e) => write!(f, "IO error: {}", e),
+            StorageError::SerdeError(e) => write!(f, "Serialization error: {}", e),
+            StorageError::KeyNotFound(name) => write!(f, "Key '{}' not found", name),
+            StorageError::KeyAlreadyExists(name) => write!(f, "Key '{}' already exists", name),
+            StorageError::InvalidKeyName(name) => write!(f, "Invalid key name: '{}'", name),
+        }
+    }
+}
+
+impl std::error::Error for StorageError {}
+
+// ==== Core Encryption Functions ====
 
 fn derive_key(password: &str, salt: &[u8]) -> [u8; 32] {
     let mut key = [0u8; 32];
@@ -48,6 +94,7 @@ pub fn encrypt_private_key(pk: &[u8], password: &str) -> Option<EncryptPrivateKe
             nonce: hex::encode(nonce),
             ciphertext: hex::encode(ciphertext),
         },
+        metadata: None
     })
 }
 
@@ -93,6 +140,18 @@ pub fn decrypt_private_key(data: &EncryptPrivateKey, password: &str) -> Option<V
         }
     }
 }
+
+// ==== Storage Functions ====
+pub fn get_storage_directory() -> Result<PathBuf, StorageError> {
+    let home = dirs::home_dir()
+        .ok_or_else(|| StorageError::IoError(
+            io::Error::new(io::ErrorKind::NotFound, "Could not find home directory")
+        ))?;
+    let storage_dir = home.join(".stomataKeys");
+    Ok(storage_dir)
+}
+
+
 
 #[cfg(test)]
 mod tests {

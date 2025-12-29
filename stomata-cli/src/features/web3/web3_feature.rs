@@ -181,7 +181,7 @@ pub fn run(
                 Ok(cli) => {
                     match cli.tool {
                         Web3Tool::AddressValidator { address } => validate_address(&address),
-                        Web3Tool::EncryptKey { key } => encrypt_key(key),
+                        Web3Tool::EncryptKey { name, key } => encrypt_key(name, key),
                     };
                 }
                 Err(e) => {

@@ -1,9 +1,12 @@
 use std::process::exit;
 
-use stomata_web3::providers::encrypt_secret::{decrypt_private_key, encrypt_private_key};
+use stomata_web3::providers::{
+    encrypt_secret::{decrypt_private_key, encrypt_private_key},
+    store_key,
+};
 
-pub fn encrypt_key(pk: String) {
-    let password = match rpassword::prompt_password("Your Password") {
+pub fn encrypt_key(name: String, pk: String) {
+    let password = match rpassword::prompt_password("Add Password: ") {
         Ok(pw) => pw,
         Err(err) => {
             eprintln!("Error in reading password");
@@ -11,8 +14,8 @@ pub fn encrypt_key(pk: String) {
         }
     };
 
-    let res = encrypt_private_key(pk.as_bytes(), password.as_str());
-    if let Some(data) = res {
-        println!("{:?}", data);
+    let res = store_key(name.as_str(), pk.as_bytes(), password.as_str());
+    if let Err(err) = res {
+        eprintln!("Error in encrypting key {:?}", err);
     }
 }

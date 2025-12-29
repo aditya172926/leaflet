@@ -19,6 +19,9 @@ pub enum Web3Tool {
     },
     #[command(name = "encrypt-key", alias = "ek")]
     EncryptKey {
+        // key name
+        #[arg(short, long, required = true)]
+        name: String,
         // Key to encrypt
         #[arg(short, long, required = true)]
         key: String,

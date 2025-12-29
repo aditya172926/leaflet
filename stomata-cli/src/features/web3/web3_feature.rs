@@ -22,7 +22,7 @@ use crate::{
         render_widgets::render_paragraph::paragraph_widget,
         web3_displays::{
             address_validation::validate_address,
-            key_encryption::{decrypt_key, encrypt_key},
+            key_encryption::{decrypt_key, encrypt_key, list_all_keys},
         },
     },
     structs::Cli,
@@ -187,6 +187,7 @@ pub fn run(
                         Web3Tool::Key(key_cmd) => match key_cmd {
                             KeySubCommands::Encrypt { name } => encrypt_key(name),
                             KeySubCommands::Decrypt { name, format } => decrypt_key(name, format),
+                            KeySubCommands::List {} => list_all_keys(),
                         },
                     };
                 }

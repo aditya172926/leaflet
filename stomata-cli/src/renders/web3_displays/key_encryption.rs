@@ -1,6 +1,6 @@
 use std::process::exit;
 
-use stomata_web3::providers::{retrieve_key, store_key};
+use stomata_web3::providers::{list_keys, retrieve_key, store_key};
 
 use crate::features::web3::cli::OutputFormat;
 
@@ -28,7 +28,6 @@ pub fn decrypt_key(name: String, format: OutputFormat) {
     let password = ask_sensitive_info("Password: ");
     let res = retrieve_key(name.as_str(), password.as_str());
     if let Ok(data) = res {
-        // println!("{:?}", hex::encode(&data));
         match format {
             OutputFormat::Hex => println!("{:?}", hex::encode(&data)),
             OutputFormat::Utf8 => println!(
@@ -37,4 +36,13 @@ pub fn decrypt_key(name: String, format: OutputFormat) {
             ),
         }
     };
+}
+
+pub fn list_all_keys() {
+    let keys = list_keys();
+    if let Ok(res) = keys {
+        for key in res {
+            println!("{key}");
+        }
+    }
 }

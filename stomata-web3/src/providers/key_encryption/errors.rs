@@ -1,6 +1,5 @@
 use std::io;
 
-
 #[derive(Debug)]
 pub enum StorageError {
     IoError(io::Error),

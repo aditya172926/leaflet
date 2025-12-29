@@ -1,5 +1,3 @@
-use std::{fs, io, path::PathBuf};
-
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use argon2::Argon2;
 use rand::random;
@@ -41,7 +39,7 @@ pub fn encrypt_private_key(pk: &[u8], password: &str) -> Option<EncryptPrivateKe
             nonce: hex::encode(nonce),
             ciphertext: hex::encode(ciphertext),
         },
-        metadata: None
+        metadata: None,
     })
 }
 

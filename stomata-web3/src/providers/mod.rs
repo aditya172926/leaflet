@@ -1,4 +1,7 @@
 pub mod address;
-pub mod key_encryption;
+mod key_encryption;
 
-pub use key_encryption::encrypt_secret;
+pub use key_encryption::{
+    encrypt_secret,
+    store_secrets::{retrieve_key, store_key},
+};

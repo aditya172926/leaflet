@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 /// Web3 developer tools CLI
 #[derive(Parser, Clone)]
@@ -18,7 +18,13 @@ pub enum Web3Tool {
         address: String,
     },
     #[command(subcommand)]
-    Key(KeySubCommands) ,
+    Key(KeySubCommands),
+}
+
+#[derive(Clone, Debug, ValueEnum)]
+pub enum OutputFormat {
+    Hex,
+    Utf8,
 }
 
 #[derive(Subcommand, Clone)]
@@ -27,9 +33,13 @@ pub enum KeySubCommands {
         // Name of the key to encrypt
         #[arg(short, long, required = true)]
         name: String,
-
-        // Key to encrypt
+    },
+    Decrypt {
+        // Name of the key to decrypt
         #[arg(short, long, required = true)]
-        key: String
-    }
+        name: String,
+
+        #[arg(short, long, value_enum, default_value_t = OutputFormat::Utf8)]
+        format: OutputFormat,
+    },
 }

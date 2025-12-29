@@ -1059,6 +1059,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "hex",
  "ratatui",
  "rpassword",
  "stomata-core",

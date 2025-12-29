@@ -26,6 +26,7 @@ stomata-web3 = { version = "0.0.1", path = '../stomata-web3', optional = true }
 sysinfo = { workspace = true }
 chrono = { workspace = true }
 rpassword = "7.4.0"
+hex.workspace = true
 
 [features]
 default = ["core", "web3"]

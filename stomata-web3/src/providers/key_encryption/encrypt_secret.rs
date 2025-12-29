@@ -2,16 +2,9 @@ use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use argon2::Argon2;
 use rand::random;
 
-pub struct EncryptPrivateKey {
-    pub crypto_key: CryptoData,
-}
+use crate::providers::key_encryption::structs::{CryptoData, EncryptPrivateKey};
 
-pub struct CryptoData {
-    pub cipher: String,
-    pub salt: String,
-    pub nonce: String,
-    pub ciphertext: String,
-}
+// ==== Core Encryption Functions ====
 
 fn derive_key(password: &str, salt: &[u8]) -> [u8; 32] {
     let mut key = [0u8; 32];
@@ -46,6 +39,7 @@ pub fn encrypt_private_key(pk: &[u8], password: &str) -> Option<EncryptPrivateKe
             nonce: hex::encode(nonce),
             ciphertext: hex::encode(ciphertext),
         },
+        metadata: None,
     })
 }
 

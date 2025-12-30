@@ -1,3 +1,9 @@
+//! System metrics display implementation
+//!
+//! Provides the visual rendering logic for real-time system resource metrics
+//! including CPU, memory, and swap usage. This module implements the `Display`
+//! trait for `SystemCollector` to render gauges and detailed statistics.
+
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -13,7 +19,54 @@ use crate::{
     utils::bytes_to_mb,
 };
 
+// Display implementation for system resource metrics
+///
+/// Renders a comprehensive view of system resources divided into four sections:
+/// 1. Memory usage gauge
+/// 2. Swap usage gauge
+/// 3. CPU usage gauge
+/// 4. Detailed statistics panels
+///
+/// The detailed statistics section is horizontally divided into three equal panels
+/// showing memory info, swap info, and CPU count.
 impl Display for SystemCollector {
+    /// Renders system metrics to the terminal frame
+    ///
+    /// Creates a vertical layout with visual gauges for quick assessment
+    /// and detailed text panels for precise values. All memory values are
+    /// converted from bytes to megabytes for better readability.
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - The ratatui frame to render into
+    /// * `area` - The rectangular area allocated for system metrics display
+    /// * `_ui_state` - Unused for this display (no interactive state needed)
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - Rendering completed successfully
+    ///
+    /// # Gauge Details
+    ///
+    /// - **Memory Gauge**: Shows used vs total memory in MB with percentage
+    /// - **Swap Gauge**: Shows used vs total swap space in MB with percentage
+    /// - **CPU Gauge**: Shows overall CPU utilization as a percentage (0-100%)
+    ///
+    /// # Statistics Panels
+    ///
+    /// - **Memory Info**: Exact bytes used/total and usage percentage
+    /// - **Swap Info**: Exact bytes used/total and usage percentage
+    /// - **CPU Count**: Number of logical CPU cores available
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use stomata_core::collectors::system::metrics::SystemCollector;
+    /// use stomata::renders::core_displays::traits::Display;
+    ///
+    /// let collector = SystemCollector::new();
+    /// collector.display(frame, area, None)?;
+    /// ```
     fn display(
         &self,
         frame: &mut Frame,

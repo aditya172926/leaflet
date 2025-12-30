@@ -2,7 +2,7 @@
 name = "stomata-cli"
 description = "CLI tool for collecting and visualizing system metrics"
 license.workspace = true
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors.workspace = true
 repository.workspace = true
@@ -22,7 +22,7 @@ ratatui = "0.29.0"
 anyhow = { workspace = true }
 clap = { version = "4.5.50", features = ["derive"] }
 stomata-core = { version = "0.1.5", path = '../stomata-core', optional = true }
-stomata-web3 = { version = "0.0.1", path = '../stomata-web3', optional = true }
+stomata-web3 = { version = "0.0.2", path = '../stomata-web3', optional = true }
 sysinfo = { workspace = true }
 chrono = { workspace = true }
 rpassword = "7.4.0"

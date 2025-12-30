@@ -1,3 +1,9 @@
+//! Web3 feature execution and UI management
+//!
+//! This module handles both the interactive TUI (Terminal User Interface) and
+//! CLI modes for Web3 tools. It provides a tabbed interface for interactive
+//! mode and direct command execution for CLI mode.
+
 use std::{
     io::Stdout,
     iter::once,
@@ -28,15 +34,33 @@ use crate::{
     structs::Cli,
 };
 
+/// Available pages in the Web3 TUI
+///
+/// Each variant represents a different feature page that can be
+/// displayed in the interactive terminal interface.
 pub enum Web3Page {
+    /// Page for validating Ethereum addresses
     AddressValidation,
 }
 
 impl Web3Page {
+    /// Returns the titles of all available pages
+    ///
+    /// Used for rendering the tab bar in the TUI.
     pub fn titles() -> Vec<&'static str> {
         vec!["Address Validation"]
     }
 
+    /// Converts a tab index to the corresponding page
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - Zero-based tab index
+    ///
+    /// # Returns
+    ///
+    /// The corresponding `Web3Page`, defaulting to `AddressValidation`
+    /// for out-of-range indices.
     pub fn from_index(index: usize) -> Self {
         match index {
             0 => Web3Page::AddressValidation,
@@ -45,16 +69,33 @@ impl Web3Page {
     }
 }
 
+/// UI-specific state for the Web3 interactive interface
+///
+/// Currently a placeholder for future UI state management.
 pub struct Web3UIState;
 
+/// State manager for the Web3 feature
+///
+/// Manages the interactive TUI state including current page,
+/// tab selection, and rendering lifecycle.
 pub struct Web3State {
+    /// Whether the UI should continue rendering
     pub render: bool,
+
+    /// The currently active page
     pub current_page: Web3Page,
+
+    /// Index of the currently selected tab
     pub tab_index: usize,
+
+    /// Optional UI-specific state
     pub ui_state: Option<Web3UIState>,
 }
 
 impl Web3State {
+    /// Creates a new Web3State with default values
+    ///
+    /// Initializes to the Address Validation page with rendering enabled.
     pub fn new() -> Self {
         Self {
             render: true,
@@ -64,13 +105,13 @@ impl Web3State {
         }
     }
 
-    // go to the next tab
+    /// Advances to the next tab, wrapping around to the first tab
     pub fn next_tab(&mut self) {
         self.tab_index = (self.tab_index + 1) % Web3Page::titles().len();
         self.current_page = Web3Page::from_index(self.tab_index);
     }
 
-    // go to the previous tab
+    /// Moves to the previous tab, wrapping around to the last tab
     pub fn previous_tab(&mut self) {
         if self.tab_index > 0 {
             self.tab_index -= 1;
@@ -80,6 +121,11 @@ impl Web3State {
         self.current_page = Web3Page::from_index(self.tab_index);
     }
 
+    /// Renders the current page to the terminal frame
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - The ratatui frame to render into
     pub fn render(&mut self, frame: &mut Frame) {
         let chunks =
             Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
@@ -98,7 +144,12 @@ impl Web3State {
         }
     }
 
-    // render tabs
+    /// Renders the tab bar at the top of the interface
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - The ratatui frame to render into
+    /// * `area` - The rectangular area to render the tabs in
     pub fn render_tabs(&self, frame: &mut Frame, area: Rect) {
         let titles: Vec<Line> = Web3Page::titles().iter().map(|t| Line::from(*t)).collect();
         let tabs = Tabs::new(titles)
@@ -114,7 +165,15 @@ impl Web3State {
         frame.render_widget(tabs, area);
     }
 
-    // handle events
+    /// Processes keyboard events from the user
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The keyboard event to process
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if event processing fails.
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
         if key.kind == KeyEventKind::Press {
             self.process_global_events(key);
@@ -122,6 +181,14 @@ impl Web3State {
         Ok(())
     }
 
+    /// Processes global keyboard shortcuts
+    ///
+    /// Handles navigation keys (Tab, arrows), quit command (q),
+    /// and direct tab selection (number keys).
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The keyboard event to process
     fn process_global_events(&mut self, key: KeyEvent) {
         match key.code {
             KeyCode::Char('q') => {
@@ -142,6 +209,46 @@ impl Web3State {
     }
 }
 
+/// Runs the Web3 feature in either interactive TUI or CLI mode
+///
+/// If a terminal is provided, runs in interactive mode with a tabbed UI.
+/// Otherwise, parses CLI arguments and executes the requested command directly.
+///
+/// # Arguments
+///
+/// * `cli` - The parsed CLI arguments
+/// * `terminal` - Optional terminal for interactive mode. If `None`, runs in CLI mode.
+///
+/// # Returns
+///
+/// * `Ok(true)` - Interactive mode exited normally
+/// * `Ok(false)` - CLI command executed successfully
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Terminal event polling fails
+/// - Terminal rendering fails
+/// - CLI command execution fails
+///
+/// # Interactive Mode Keybindings
+///
+/// - `q` - Quit the application
+/// - `Tab` or `Right Arrow` - Next tab
+/// - `Left Arrow` - Previous tab
+/// - `1` - Jump to Address Validation tab
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// // CLI mode (no terminal provided)
+/// let cli = Cli::parse();
+/// run(&cli, None)?;
+///
+/// // Interactive mode (terminal provided)
+/// let mut terminal = setup_terminal()?;
+/// run(&cli, Some(&mut terminal))?;
+/// ```
 pub fn run(
     cli: &Cli,
     terminal: Option<&mut Terminal<CrosstermBackend<Stdout>>>,

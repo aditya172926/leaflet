@@ -1,3 +1,9 @@
+//! Core application state and rendering logic
+//!
+//! This module contains the main `App` struct that manages the entire
+//! application state, handles user input, and coordinates rendering of
+//! different pages in the TUI.
+
 use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent, KeyEventKind},
@@ -14,17 +20,52 @@ use crate::{
     utils::bytes_to_mb,
 };
 
+/// Main application state manager
+///
+/// Manages the entire application lifecycle including:
+/// - System metrics collection and display
+/// - Tab navigation and page routing
+/// - User input handling
+/// - UI state management across different pages
 #[derive(Debug)]
 pub struct App {
+    /// Whether the application should continue rendering
     pub render: bool,
+
+    /// System metrics collector and storage
     pub metrics: StomataSystemMetrics,
+
+    /// Index of the currently selected tab (0-based)
     pub tab_index: usize,
+
+    /// The currently active page being displayed
     pub current_page: Page,
+
+    /// Whether to store historical metrics data
     pub store_data: bool,
+
+    /// UI state for stateful widgets (tables, lists, charts)
     pub ui_state: UIState,
 }
 
 impl App {
+    /// Creates a new application instance
+    ///
+    /// Initializes the app with default values and prepares the metrics
+    /// collection system. The app starts on the System page with rendering enabled.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use stomata::renders::core_displays::display_app::App;
+    ///
+    /// // Create app without metrics storage (lower memory usage)
+    /// let app = App::new(false);
+    ///
+    /// // Create app with metrics storage (enables historical charts)
+    /// let app_with_history = App::new(true);
+    /// ```
     pub fn new(store_metrics: bool) -> Self {
         Self {
             render: true,
@@ -36,13 +77,17 @@ impl App {
         }
     }
 
-    // go to the next tab
+    /// Advances to the next tab, wrapping to the first tab after the last
+    ///
+    /// Updates both `tab_index` and `current_page` to maintain consistency.
     pub fn next_tab(&mut self) {
         self.tab_index = (self.tab_index + 1) % Page::titles().len();
         self.current_page = Page::from_index(self.tab_index);
     }
 
-    // go to the previous tab
+    /// Moves to the previous tab, wrapping to the last tab before the first
+    ///
+    /// Updates both `tab_index` and `current_page` to maintain consistency.
     pub fn previous_tab(&mut self) {
         if self.tab_index > 0 {
             self.tab_index -= 1;
@@ -52,7 +97,23 @@ impl App {
         self.current_page = Page::from_index(self.tab_index);
     }
 
-    // render according to the tab selected
+    /// Renders the current page to the terminal frame
+    ///
+    /// Divides the screen into a tab bar and content area, then renders
+    /// the appropriate content based on the current page. Fetches fresh
+    /// metrics data for the current page before rendering.
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - The ratatui frame to render into
+    ///
+    /// # Page-specific behavior
+    ///
+    /// - **System**: Displays static system information (OS, hostname, etc.)
+    /// - **Metrics**: Shows real-time resource usage (CPU, memory, disk)
+    /// - **Processes**: Lists all running processes with sortable columns
+    /// - **SingleProcess**: Detailed view of a specific process
+    /// - **Network**: Network interface statistics and traffic
     pub fn render(&mut self, frame: &mut Frame) {
         let chunks =
             Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
@@ -108,7 +169,15 @@ impl App {
         }
     }
 
-    // render tabs
+    /// Renders the tab bar at the top of the screen
+    ///
+    /// Displays all available pages as tabs with the current tab highlighted
+    /// in green and bold.
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - The ratatui frame to render into
+    /// * `area` - The rectangular area to render the tabs in
     pub fn render_tabs(&self, frame: &mut Frame, area: Rect) {
         let titles: Vec<Line> = Page::titles().iter().map(|t| Line::from(*t)).collect();
         let tabs = Tabs::new(titles)
@@ -124,7 +193,19 @@ impl App {
         frame.render_widget(tabs, area);
     }
 
-    // handle quit events to close the new terminal
+    /// Handles keyboard events from the user
+    ///
+    /// Processes both global keyboard shortcuts (navigation, quit) and
+    /// page-specific shortcuts (e.g., process list navigation). Only
+    /// key press events are processed; key release events are ignored.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The keyboard event to process
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if event processing fails (currently always returns `Ok`).
     pub fn handle_events(&mut self, key: KeyEvent) -> anyhow::Result<()> {
         if key.kind == KeyEventKind::Press {
             self.process_global_events(key);
@@ -138,6 +219,21 @@ impl App {
         Ok(())
     }
 
+    /// Processes global keyboard shortcuts available on all pages
+    ///
+    /// # Keybindings
+    ///
+    /// - `q` - Quit the application
+    /// - `Tab` or `Right Arrow` - Next tab
+    /// - `Left Arrow` - Previous tab
+    /// - `1` - Jump to System page
+    /// - `2` - Jump to Metrics page
+    /// - `3` - Jump to Processes page
+    /// - `4` - Jump to Network page
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The keyboard event to process
     fn process_global_events(&mut self, key: KeyEvent) {
         match key.code {
             KeyCode::Char('q') => {
@@ -169,6 +265,20 @@ impl App {
         }
     }
 
+    /// Processes page-specific keyboard events for the Processes page
+    ///
+    /// Handles navigation through the process list and opening detailed
+    /// process views.
+    ///
+    /// # Keybindings (Processes page only)
+    ///
+    /// - `Up Arrow` - Select previous process in the list
+    /// - `Down Arrow` - Select next process in the list
+    /// - `Enter` - Open detailed view for the selected process
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The keyboard event to process
     fn process_page_events(&mut self, key: KeyEvent) {
         let max_processes = self.ui_state.process_table.process_count;
         match key.code {

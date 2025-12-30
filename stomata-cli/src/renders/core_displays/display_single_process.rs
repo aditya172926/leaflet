@@ -1,3 +1,10 @@
+//! Single process detailed view implementation
+//!
+//! Provides a comprehensive, multi-panel view of a single process including
+//! basic information, resource usage gauges, disk I/O trends, and associated
+//! tasks/threads. This is the detailed view accessible by pressing Enter on
+//! a process in the process list.
+
 use crate::{
     renders::{
         core_displays::traits::SingleProcessDisplay,
@@ -15,7 +22,98 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
 };
 
+/// Display implementation for detailed single process view
+///
+/// Creates a comprehensive dashboard for a single process with multiple panels
+/// showing real-time metrics, historical trends, and task information. The
+/// layout adapts based on whether the process has associated tasks/threads.
+///
+/// # Layout Variants
+///
+/// ## With Tasks (3 columns)
+/// ```text
+/// ┌─────────────┬─────────────┬─────────────┐
+/// │ Basic Info  │ Extra Info  │   Tasks     │
+/// │   (30%)     │             │   Table     │
+/// ├─────────────┤ Disk Read   │             │
+/// │ CPU Gauge   │ Sparkline   │             │
+/// │   (35%)     │             │             │
+/// │ Memory      │ Disk Write  │             │
+/// │ Gauge (35%) │ Sparkline   │             │
+/// └─────────────┴─────────────┴─────────────┘
+///    33%            33%            33%
+/// ```
+///
+/// ## Without Tasks (2 columns)
+/// ```text
+/// ┌─────────────┬─────────────┐
+/// │ Basic Info  │ Extra Info  │
+/// │   (30%)     │             │
+/// ├─────────────┤ Disk Read   │
+/// │ CPU Gauge   │ Sparkline   │
+/// │   (35%)     │             │
+/// │ Memory      │ Disk Write  │
+/// │ Gauge (35%) │ Sparkline   │
+/// └─────────────┴─────────────┘
+///      50%            50%
+/// ```
 impl SingleProcessDisplay for SingleProcessUI<'_> {
+    /// Renders detailed metrics for a single process
+    ///
+    /// Creates an adaptive layout with 2-3 columns depending on whether the
+    /// process has tasks (linux only). Displays comprehensive information including basic
+    /// metadata, resource usage, disk I/O trends, and associated threads.
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - The ratatui frame to render into
+    /// * `area` - The rectangular area allocated for the process view
+    /// * `total_memory` - Total system memory in MB (for memory gauge scaling)
+    /// * `ui_state` - UI state containing disk I/O history buffers for sparklines
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - Rendering completed successfully
+    ///
+    /// # State Management
+    ///
+    /// The `ui_state.single_process_disk_usage` maintains rolling buffers of:
+    /// - `disk_read_usage`: Historical read byte rates for sparkline
+    /// - `disk_write_usage`: Historical write byte rates for sparkline
+    ///
+    /// These buffers are automatically updated when the display is rendered,
+    /// providing smooth animated sparkline charts of disk activity.
+    ///
+    /// # Memory Calculation
+    ///
+    /// The memory gauge shows:
+    /// - Used: Process memory consumption in MB
+    /// - Total: System total memory (passed as parameter)
+    /// - This provides context for how much of system memory the process uses
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use stomata::structs::SingleProcessUI;
+    /// use stomata::renders::core_displays::traits::SingleProcessDisplay;
+    ///
+    /// let process_ui = SingleProcessUI { data: process_data };
+    /// let total_memory_mb = bytes_to_mb(system.total_memory());
+    ///
+    /// process_ui.display_process_metrics(
+    ///     frame,
+    ///     area,
+    ///     total_memory_mb,
+    ///     &mut ui_state
+    /// )?;
+    /// ```
+    ///
+    /// # Navigation
+    ///
+    /// Users typically reach this view by:
+    /// 1. Navigating the process list (Page::Processes)
+    /// 2. Selecting a process with Up/Down arrows
+    /// 3. Pressing Enter to view detailed metrics
     fn display_process_metrics(
         &self,
         frame: &mut Frame,

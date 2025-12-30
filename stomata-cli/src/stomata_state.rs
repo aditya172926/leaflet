@@ -1,3 +1,10 @@
+//! Application state management and feature selection UI
+//!
+//! Manages the main application state including feature availability,
+//! user selection, and navigation between the feature selection menu
+//! and running features. Provides the interactive menu interface for
+//! choosing which monitoring or utility feature to run.
+
 use std::collections::HashMap;
 
 use ratatui::{
@@ -17,6 +24,34 @@ use crate::{
 };
 
 impl StomataState {
+     /// Creates a new application state with available features.
+    ///
+    /// Initializes the application state and builds a map of enabled features
+    /// based on compile-time feature flags. Only features that are compiled
+    /// into the binary will appear in the feature selection menu.
+    ///
+    /// # Available Features
+    ///
+    /// - **core** (requires `feature = "core"`): System monitoring capabilities
+    ///   including CPU, memory, disk, and network metrics
+    /// - **web3** (requires `feature = "web3"`): Web3 utilities for address
+    ///   validation, key management, and blockchain interactions
+    ///
+    /// # Returns
+    ///
+    /// A new `StomataState` initialized to the feature selection screen with
+    /// no feature selected.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::structs::StomataState;
+    ///
+    /// let app = StomataState::new();
+    /// // app.available_features contains only compiled features
+    /// // app.state is AppState::FeatureSelection
+    /// // app.selected_feature is 0
+    /// ```
     pub fn new() -> Self {
         let mut available_features = HashMap::new();
 
@@ -33,6 +68,22 @@ impl StomataState {
         }
     }
 
+    /// Renders the feature selection menu to the terminal UI.
+    ///
+    /// Displays a two-section layout with a title area and a selectable list
+    /// of available features. Each feature shows a name and description to
+    /// help users choose the appropriate tool for their needs.
+    ///
+    /// # Arguments
+    ///
+    /// * `frame` - Mutable reference to the ratatui frame for rendering
+    ///
+    ///
+    /// # Error Handling
+    ///
+    /// If no features are compiled, displays an error message instructing
+    /// the user to rebuild with feature flags enabled.
+    ///
     pub fn render_feature_selection(&self, frame: &mut Frame) {
         let chunks =
             Layout::vertical([Constraint::Length(5), Constraint::Min(10)]).split(frame.area());
@@ -92,6 +143,11 @@ impl StomataState {
         }
     }
 
+    /// Handles keyboard input for feature selection navigation.
+    ///
+    /// Processes key events to navigate the feature list, select features,
+    /// or quit the application. Updates the application state based on
+    /// user input.
     pub fn handle_feature_selection(&mut self, key: KeyEvent) -> bool {
         match key.code {
             KeyCode::Up => {

@@ -217,7 +217,7 @@ pub struct ProcessesUIState {
     /// Total number of processes in the list
     pub process_count: usize,
 
-     /// PID of the selected process (if any)
+    /// PID of the selected process (if any)
     pub selected_pid: Option<u32>,
 }
 

@@ -24,7 +24,7 @@ use crate::{
 };
 
 impl StomataState {
-     /// Creates a new application state with available features.
+    /// Creates a new application state with available features.
     ///
     /// Initializes the application state and builds a map of enabled features
     /// based on compile-time feature flags. Only features that are compiled

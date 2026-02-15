@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+.github/
+*.md
+!README.md
+Cargo.lock
+tests/
+*.local
+.env

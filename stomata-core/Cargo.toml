@@ -17,4 +17,4 @@ path = "src/lib.rs"
 anyhow = { workspace = true }
 chrono = { workspace = true }
 sysinfo = { workspace = true }
-thiserror = "2.0.17"
+thiserror = "=2.0.17"

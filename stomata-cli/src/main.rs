@@ -7,7 +7,6 @@ use crate::{
 };
 use clap::Parser;
 use ratatui::crossterm::event::{self, Event};
-// testing a comit
 
 mod constants;
 mod features;
